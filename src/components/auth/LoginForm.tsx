@@ -71,35 +71,43 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-        <CardDescription>Sign in to your API Sentinel account</CardDescription>
+    <Card className="w-full max-w-sm border-t-2 border-t-primary/50 shadow-[0_8px_40px_oklch(0.47_0.21_264/0.1)] dark:shadow-[0_8px_40px_oklch(0_0_0/0.5)] border-border/50">
+      <CardHeader className="space-y-1 pb-5">
+        <CardTitle className="text-2xl font-bold tracking-tight">
+          Welcome back
+        </CardTitle>
+        <CardDescription className="text-muted-foreground/80">
+          Sign in to your API Sentinel account
+        </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         <div className="grid grid-cols-2 gap-3">
           <Button
+            type="button"
             variant="outline"
             onClick={() => handleOAuth("github")}
             disabled={!!oauthLoading || isSubmitting}
+            className="gap-2 border-border/60 hover:bg-accent/80"
           >
             {oauthLoading === "github" ? (
-              <Loader2 className="mr-2 size-4 animate-spin" />
+              <Loader2 className="size-4 animate-spin" />
             ) : (
-              <SiGithub className="mr-2 size-4" />
+              <SiGithub className="size-4" />
             )}
             GitHub
           </Button>
           <Button
+            type="button"
             variant="outline"
             onClick={() => handleOAuth("google")}
             disabled={!!oauthLoading || isSubmitting}
+            className="gap-2 border-border/60 hover:bg-accent/80"
           >
             {oauthLoading === "google" ? (
-              <Loader2 className="mr-2 size-4 animate-spin" />
+              <Loader2 className="size-4 animate-spin" />
             ) : (
-              <SiGoogle className="mr-2 size-4" />
+              <SiGoogle className="size-4" />
             )}
             Google
           </Button>
@@ -107,14 +115,19 @@ export function LoginForm() {
 
         <FieldSeparator>Or continue with email</FieldSeparator>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-4"
+          noValidate
+        >
           <Controller
             control={control}
             name="email"
             render={({ field, fieldState }) => (
               <Field data-invalid={!!fieldState.error}>
-                <FieldLabel>Email</FieldLabel>
+                <FieldLabel htmlFor="login-email">Email</FieldLabel>
                 <Input
+                  id="login-email"
                   type="email"
                   placeholder="you@example.com"
                   autoComplete="email"
@@ -142,6 +155,7 @@ export function LoginForm() {
                   </Link>
                 </div>
                 <Input
+                  id="login-password"
                   type="password"
                   placeholder="Your password"
                   autoComplete="current-password"

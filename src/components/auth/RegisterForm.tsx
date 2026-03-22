@@ -81,37 +81,43 @@ export function RegisterForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-        <CardDescription>
+    <Card className="w-full max-w-sm border-t-2 border-t-primary/50 shadow-[0_8px_40px_oklch(0.47_0.21_264/0.1)] dark:shadow-[0_8px_40px_oklch(0_0_0/0.5)] border-border/50">
+      <CardHeader className="space-y-1 pb-5">
+        <CardTitle className="text-2xl font-bold tracking-tight">
+          Create an account
+        </CardTitle>
+        <CardDescription className="text-muted-foreground/80">
           Enter your details to get started with API Sentinel
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         <div className="grid grid-cols-2 gap-3">
           <Button
+            type="button"
             variant="outline"
             onClick={() => handleOAuth("github")}
             disabled={!!oauthLoading || isSubmitting}
+            className="gap-2 border-border/60 hover:bg-accent/80"
           >
             {oauthLoading === "github" ? (
-              <Loader2 className="mr-2 size-4 animate-spin" />
+              <Loader2 className="size-4 animate-spin" />
             ) : (
-              <SiGithub className="mr-2 size-4" />
+              <SiGithub className="size-4" />
             )}
             GitHub
           </Button>
           <Button
+            type="button"
             variant="outline"
             onClick={() => handleOAuth("google")}
             disabled={!!oauthLoading || isSubmitting}
+            className="gap-2 border-border/60 hover:bg-accent/80"
           >
             {oauthLoading === "google" ? (
-              <Loader2 className="mr-2 size-4 animate-spin" />
+              <Loader2 className="size-4 animate-spin" />
             ) : (
-              <SiGoogle className="mr-2 size-4" />
+              <SiGoogle className="size-4" />
             )}
             Google
           </Button>
@@ -119,14 +125,23 @@ export function RegisterForm() {
 
         <FieldSeparator>Or continue with email</FieldSeparator>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-4"
+          noValidate
+        >
           <Controller
             control={control}
             name="name"
             render={({ field, fieldState }) => (
               <Field data-invalid={!!fieldState.error}>
-                <FieldLabel>Full name</FieldLabel>
-                <Input placeholder="John Doe" autoComplete="name" {...field} />
+                <FieldLabel htmlFor="register-name">Full name</FieldLabel>
+                <Input
+                  id="register-name"
+                  placeholder="John Doe"
+                  autoComplete="name"
+                  {...field}
+                />
                 <FieldError
                   errors={fieldState.error ? [fieldState.error] : undefined}
                 />
@@ -139,8 +154,9 @@ export function RegisterForm() {
             name="email"
             render={({ field, fieldState }) => (
               <Field data-invalid={!!fieldState.error}>
-                <FieldLabel>Email</FieldLabel>
+                <FieldLabel htmlFor="register-email">Email</FieldLabel>
                 <Input
+                  id="register-email"
                   type="email"
                   placeholder="you@example.com"
                   autoComplete="email"
@@ -158,8 +174,9 @@ export function RegisterForm() {
             name="password"
             render={({ field, fieldState }) => (
               <Field data-invalid={!!fieldState.error}>
-                <FieldLabel>Password</FieldLabel>
+                <FieldLabel htmlFor="register-password">Password</FieldLabel>
                 <Input
+                  id="register-password"
                   type="password"
                   placeholder="Min. 8 characters"
                   autoComplete="new-password"
@@ -177,8 +194,11 @@ export function RegisterForm() {
             name="confirmPassword"
             render={({ field, fieldState }) => (
               <Field data-invalid={!!fieldState.error}>
-                <FieldLabel>Confirm password</FieldLabel>
+                <FieldLabel htmlFor="register-confirm">
+                  Confirm password
+                </FieldLabel>
                 <Input
+                  id="register-confirm"
                   type="password"
                   placeholder="Repeat your password"
                   autoComplete="new-password"
