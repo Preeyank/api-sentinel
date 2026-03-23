@@ -1,0 +1,200 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  ShieldCheck,
+  LayoutDashboard,
+  KeyRound,
+  Activity,
+  PanelLeftClose,
+  PanelLeftOpen,
+  User,
+  LogOut,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { signOut } from "@/lib/auth-client";
+
+const NAV_ITEMS = [
+  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/dashboard/sessions", icon: KeyRound, label: "Sessions" },
+];
+
+function getInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+type SidebarProps = {
+  user: { name: string; email: string };
+  plan: string;
+};
+
+export function Sidebar({ user, plan }: SidebarProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [collapsed, setCollapsed] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onMouseDown(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [menuOpen]);
+
+  function toggle() {
+    setCollapsed((v) => !v);
+  }
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
+  const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase();
+
+  return (
+    <aside
+      className={cn(
+        "hidden h-full shrink-0 flex-col border-r bg-sidebar md:flex overflow-visible transition-[width] duration-200 ease-in-out",
+        collapsed ? "w-14" : "w-60",
+      )}
+    >
+      {/* Header: logo/title (hides when collapsed) + always-visible toggle */}
+      <div className="flex h-10 shrink-0 items-center px-2 mt-1.5">
+        {/* Logo + name — fade out when collapsed, take no space when collapsed */}
+        <div
+          className={cn(
+            "flex min-w-0 flex-1 items-center gap-2.5 transition-all duration-200",
+            collapsed ? "w-0 overflow-hidden opacity-0" : "opacity-100",
+          )}
+        >
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+            <ShieldCheck className="size-4 text-primary" />
+          </div>
+          <span className="whitespace-nowrap text-sm font-semibold tracking-tight text-sidebar-foreground">
+            API Sentinel
+          </span>
+        </div>
+        {/* Toggle — always visible */}
+        <button
+          onClick={toggle}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        >
+          {collapsed ? (
+            <PanelLeftOpen className="size-4" />
+          ) : (
+            <PanelLeftClose className="size-4" />
+          )}
+        </button>
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 space-y-0.5 overflow-hidden p-2">
+        {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
+          const active = pathname === href;
+          return (
+            <Link
+              key={href}
+              href={href}
+              title={collapsed ? label : undefined}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-medium transition-all duration-150",
+                collapsed && "justify-center px-0",
+                active
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+              )}
+            >
+              <Icon className="size-4 shrink-0" />
+              {!collapsed && label}
+            </Link>
+          );
+        })}
+
+        {/* Monitors – coming soon */}
+        <div
+          title={collapsed ? "Monitors — coming soon" : undefined}
+          className={cn(
+            "flex cursor-not-allowed select-none items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-medium text-muted-foreground/40",
+            collapsed && "justify-center px-0",
+          )}
+        >
+          <Activity className="size-4 shrink-0" />
+          {!collapsed && (
+            <>
+              <span>Monitors</span>
+              <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary/60">
+                Soon
+              </span>
+            </>
+          )}
+        </div>
+      </nav>
+
+      {/* User footer with dropdown */}
+      <div ref={menuRef} className="relative border-t">
+        {/* Dropdown menu — renders above the button */}
+        {menuOpen && (
+          <div className="absolute bottom-full left-0 z-50 mb-1 w-52 overflow-hidden rounded-xl border bg-popover shadow-lg ring-1 ring-border">
+            <div className="p-1.5">
+              <Link
+                href="/dashboard/profile"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-accent"
+              >
+                <User className="size-3.5 text-muted-foreground" />
+                Profile
+              </Link>
+            </div>
+            <div className="border-t p-1.5">
+              <button
+                onClick={handleSignOut}
+                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
+              >
+                <LogOut className="size-3.5" />
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Trigger button */}
+        <button
+          onClick={() => setMenuOpen((v) => !v)}
+          title={collapsed ? user.name : undefined}
+          className={cn(
+            "flex w-full items-center gap-2.5 px-3 py-3 transition-colors hover:bg-accent",
+            collapsed && "justify-center",
+          )}
+        >
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary ring-1 ring-primary/25">
+            {getInitials(user.name)}
+          </span>
+          {!collapsed && (
+            <div className="min-w-0 flex-1 text-left">
+              <p className="truncate text-xs font-semibold text-sidebar-foreground">
+                {user.name}
+              </p>
+              <p className="text-[10px] text-primary/70">{planLabel} plan</p>
+            </div>
+          )}
+        </button>
+      </div>
+    </aside>
+  );
+}
