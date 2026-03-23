@@ -1,7 +1,13 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { Activity } from "lucide-react";
+import { Activity, Radio, TrendingUp, AlertTriangle } from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -19,6 +25,50 @@ export default async function DashboardPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           Your API monitoring dashboard. Add monitors to start tracking uptime.
         </p>
+      </div>
+
+      {/* Stat cards */}
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Card size="sm">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardDescription>Monitors</CardDescription>
+              <Radio className="size-4 text-muted-foreground/40" />
+            </div>
+            <CardTitle className="text-3xl font-bold text-foreground">
+              0
+            </CardTitle>
+            <CardDescription className="text-xs">
+              No monitors configured
+            </CardDescription>
+          </CardHeader>
+        </Card>
+        <Card size="sm">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardDescription>Avg Uptime</CardDescription>
+              <TrendingUp className="size-4 text-muted-foreground/40" />
+            </div>
+            <CardTitle className="text-3xl font-bold text-muted-foreground">
+              —
+            </CardTitle>
+            <CardDescription className="text-xs">No data yet</CardDescription>
+          </CardHeader>
+        </Card>
+        <Card size="sm">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardDescription>Incidents (30d)</CardDescription>
+              <AlertTriangle className="size-4 text-muted-foreground/40" />
+            </div>
+            <CardTitle className="text-3xl font-bold text-foreground">
+              0
+            </CardTitle>
+            <CardDescription className="text-xs">
+              No incidents recorded
+            </CardDescription>
+          </CardHeader>
+        </Card>
       </div>
 
       {/* Empty state */}
