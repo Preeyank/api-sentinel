@@ -3,6 +3,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { ReactNode } from "react";
 
 export default async function ProfilePage() {
@@ -26,6 +28,14 @@ export default async function ProfilePage() {
     year: "numeric",
   });
 
+  const initials = session.user.name
+    .trim()
+    .split(/\s+/)
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
     <div className="max-w-2xl p-6 lg:p-8">
       <div className="mb-6">
@@ -37,40 +47,68 @@ export default async function ProfilePage() {
         </p>
       </div>
 
-      <div className="divide-y rounded-xl border bg-card">
-        <Row label="Name" value={session.user.name} />
-
-        <Row label="Email">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-foreground">
+      <div className="overflow-hidden rounded-xl border bg-card">
+        {/* Avatar header */}
+        <div className="flex items-center gap-4 border-b bg-muted/30 px-5 py-5">
+          <Avatar className="size-14 ring-2 ring-primary/20">
+            <AvatarFallback className="bg-primary/10 text-base font-bold text-primary">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-semibold text-foreground">
+              {session.user.name}
+            </p>
+            <p className="truncate text-sm text-muted-foreground">
               {session.user.email}
-            </span>
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1",
-                dbUser?.emailVerified
-                  ? "bg-emerald-500/10 text-emerald-600 ring-emerald-500/20 dark:text-emerald-400"
-                  : "bg-amber-500/10 text-amber-600 ring-amber-500/20 dark:text-amber-400",
-              )}
-            >
-              {dbUser?.emailVerified ? "Verified" : "Unverified"}
-            </span>
+            </p>
           </div>
-        </Row>
-
-        <Row label="Role">
-          <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary ring-1 ring-primary/20">
-            {dbUser?.role ?? "USER"}
-          </span>
-        </Row>
-
-        <Row label="Plan">
-          <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-primary ring-1 ring-primary/20">
+          <Badge
+            variant="secondary"
+            className="uppercase tracking-wider text-[10px] font-semibold"
+          >
             {planLabel}
-          </span>
-        </Row>
+          </Badge>
+        </div>
 
-        <Row label="Member since" value={memberSince} />
+        {/* Info rows */}
+        <div className="divide-y">
+          <Row label="Name" value={session.user.name} />
+
+          <Row label="Email">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-foreground">
+                {session.user.email}
+              </span>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-[10px]",
+                  dbUser?.emailVerified
+                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    : "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+                )}
+              >
+                {dbUser?.emailVerified ? "Verified" : "Unverified"}
+              </Badge>
+            </div>
+          </Row>
+
+          <Row label="Role">
+            <Badge variant="secondary">{dbUser?.role ?? "USER"}</Badge>
+          </Row>
+
+          <Row label="Plan">
+            <Badge
+              variant="secondary"
+              className="uppercase tracking-wider text-[10px] font-semibold"
+            >
+              {planLabel}
+            </Badge>
+          </Row>
+
+          <Row label="Member since" value={memberSince} />
+        </div>
       </div>
     </div>
   );
