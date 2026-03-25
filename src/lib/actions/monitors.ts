@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { randomBytes } from "crypto";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -10,16 +9,23 @@ import {
   type MonitorFormValues,
 } from "@/lib/validations/monitor";
 
-function generateSlug(name: string): string {
-  const base = name
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .slice(0, 40);
-  const suffix = randomBytes(3).toString("hex");
-  return `${base}-${suffix}`;
+async function generateSlug(name: string): Promise<string> {
+  const base =
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .slice(0, 50) || "monitor";
+
+  let candidate = base;
+  let counter = 1;
+  while (await prisma.monitor.findUnique({ where: { slug: candidate } })) {
+    candidate = `${base}-${counter}`;
+    counter++;
+  }
+  return candidate;
 }
 
 async function getAuthorizedSession() {
@@ -38,7 +44,7 @@ export async function createMonitor(values: MonitorFormValues) {
       error: parsed.error.issues[0]?.message ?? "Invalid input",
     };
 
-  const slug = generateSlug(parsed.data.name);
+  const slug = await generateSlug(parsed.data.name);
 
   await prisma.monitor.create({
     data: {

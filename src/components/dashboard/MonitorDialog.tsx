@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,8 +22,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MonitorFormSchema, type MonitorFormValues } from "@/lib/validations/monitor";
+import {
+  MonitorFormSchema,
+  type MonitorFormValues,
+} from "@/lib/validations/monitor";
 import { createMonitor, updateMonitor } from "@/lib/actions/monitors";
+import { toast } from "sonner";
 
 const INTERVALS = [
   { label: "30 seconds", value: 30 },
@@ -88,11 +92,26 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
       : DEFAULT_VALUES,
   });
 
+  useEffect(() => {
+    if (!open) return;
+    reset(
+      monitor
+        ? {
+            name: monitor.name,
+            url: monitor.url,
+            environment:
+              monitor.environment as MonitorFormValues["environment"],
+            intervalSec: monitor.intervalSec,
+            expectedStatus: monitor.expectedStatus,
+            timeoutMs: monitor.timeoutMs,
+          }
+        : DEFAULT_VALUES,
+    );
+    setServerError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, monitor?.id]);
+
   function handleOpenChange(open: boolean) {
-    if (!open) {
-      reset(monitor ? undefined : DEFAULT_VALUES);
-      setServerError(null);
-    }
     onOpenChange(open);
   }
 
@@ -108,6 +127,7 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
     }
 
     handleOpenChange(false);
+    toast.success(monitor ? "Monitor updated" : "Monitor created");
     router.refresh();
   }
 
@@ -129,11 +149,7 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
           {/* Name */}
           <div className="space-y-1.5">
             <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              placeholder="My API"
-              {...register("name")}
-            />
+            <Input id="name" placeholder="My API" {...register("name")} />
             {errors.name && (
               <p className="text-xs text-destructive">{errors.name.message}</p>
             )}

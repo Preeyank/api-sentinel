@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, Globe, Activity } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -51,11 +52,17 @@ type Props = {
 
 export function MonitorList({ monitors }: Props) {
   const router = useRouter();
+  const [items, setItems] = useState(monitors);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMonitor, setEditingMonitor] = useState<Monitor | null>(null);
-  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [pauseConfirmId, setPauseConfirmId] = useState<string | null>(null);
+
+  // Sync local state when server re-renders with fresh data
+  useEffect(() => {
+    setItems(monitors);
+  }, [monitors]);
 
   function openCreate() {
     setEditingMonitor(null);
@@ -68,34 +75,49 @@ export function MonitorList({ monitors }: Props) {
   }
 
   async function handleToggle(id: string, isActive: boolean) {
-    setTogglingId(id);
-    await toggleMonitor(id, isActive);
-    router.refresh();
-    setTogglingId(null);
+    // Optimistic update
+    setItems((prev) => prev.map((m) => (m.id === id ? { ...m, isActive } : m)));
+    setPauseConfirmId(null);
+
+    const result = await toggleMonitor(id, isActive);
+    if (result.success) {
+      toast.success(isActive ? "Monitor activated" : "Monitor paused");
+      router.refresh();
+    } else {
+      // Revert optimistic update
+      setItems((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, isActive: !isActive } : m)),
+      );
+      toast.error(result.error ?? "Failed to update monitor");
+    }
   }
 
   async function handleDelete(id: string) {
     setDeletingId(id);
-    await deleteMonitor(id);
-    router.refresh();
+    const result = await deleteMonitor(id);
+    if (result.success) {
+      setItems((prev) => prev.filter((m) => m.id !== id));
+      toast.success("Monitor deleted");
+      router.refresh();
+    } else {
+      toast.error(result.error ?? "Failed to delete monitor");
+    }
     setDeletingId(null);
+    setDeleteConfirmId(null);
   }
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {monitors.length === 0
-            ? "No monitors yet."
-            : `${monitors.length} monitor${monitors.length === 1 ? "" : "s"}`}
-        </p>
-        <Button onClick={openCreate} size="sm">
-          <Plus className="size-3.5" />
-          Add monitor
-        </Button>
-      </div>
+      {items.length > 0 && (
+        <div className="flex items-center justify-end">
+          <Button onClick={openCreate} size="sm">
+            <Plus className="size-3.5" />
+            Add monitor
+          </Button>
+        </div>
+      )}
 
-      {monitors.length === 0 ? (
+      {items.length === 0 ? (
         <div className="mt-8 flex flex-col items-center justify-center rounded-xl border border-dashed py-16">
           <div className="flex size-12 items-center justify-center rounded-xl bg-muted">
             <Activity className="size-6 text-muted-foreground/50" />
@@ -114,7 +136,7 @@ export function MonitorList({ monitors }: Props) {
         </div>
       ) : (
         <div className="mt-4 divide-y overflow-hidden rounded-xl border bg-card">
-          {monitors.map((monitor) => (
+          {items.map((monitor) => (
             <div
               key={monitor.id}
               className="flex items-center gap-4 px-4 py-3.5"
@@ -147,10 +169,14 @@ export function MonitorList({ monitors }: Props) {
               <div className="flex shrink-0 items-center gap-2">
                 <Switch
                   checked={monitor.isActive}
-                  disabled={togglingId === monitor.id}
-                  onCheckedChange={(checked) =>
-                    handleToggle(monitor.id, checked)
-                  }
+                  onCheckedChange={(checked) => {
+                    if (!checked) {
+                      // Active → inactive: require confirmation
+                      setPauseConfirmId(monitor.id);
+                    } else {
+                      handleToggle(monitor.id, true);
+                    }
+                  }}
                 />
 
                 <Button
@@ -173,11 +199,34 @@ export function MonitorList({ monitors }: Props) {
                   <Trash2 className="size-3.5" />
                 </Button>
 
+                {/* Pause confirmation */}
+                <AlertDialog
+                  open={pauseConfirmId === monitor.id}
+                  onOpenChange={(open) => !open && setPauseConfirmId(null)}
+                >
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Pause monitor?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        &ldquo;{monitor.name}&rdquo; will stop sending checks
+                        until it is re-activated.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleToggle(monitor.id, false)}
+                      >
+                        Pause monitor
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                {/* Delete confirmation */}
                 <AlertDialog
                   open={deleteConfirmId === monitor.id}
-                  onOpenChange={(open) =>
-                    !open && setDeleteConfirmId(null)
-                  }
+                  onOpenChange={(open) => !open && setDeleteConfirmId(null)}
                 >
                   <AlertDialogContent>
                     <AlertDialogHeader>
