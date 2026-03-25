@@ -8,12 +8,17 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { prisma } from "@/lib/prisma";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
 
   const firstName = session.user.name.split(" ")[0];
+
+  const monitorCount = await prisma.monitor.count({
+    where: { userId: session.user.id },
+  });
 
   return (
     <div className="flex h-full flex-col p-6 lg:p-8">
@@ -36,10 +41,12 @@ export default async function DashboardPage() {
               <Radio className="size-4 text-muted-foreground/40" />
             </div>
             <CardTitle className="text-3xl font-bold text-foreground">
-              0
+              {monitorCount}
             </CardTitle>
             <CardDescription className="text-xs">
-              No monitors configured
+              {monitorCount === 0
+                ? "No monitors configured"
+                : `${monitorCount} configured`}
             </CardDescription>
           </CardHeader>
         </Card>

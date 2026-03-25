@@ -19,6 +19,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const NAV_ITEMS = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/dashboard/monitors", icon: Activity, label: "Monitors" },
   { href: "/dashboard/sessions", icon: KeyRound, label: "Sessions" },
 ];
 
@@ -129,25 +130,6 @@ export function Sidebar({ user, plan }: SidebarProps) {
             </Link>
           );
         })}
-
-        {/* Monitors – coming soon */}
-        <div
-          title={collapsed ? "Monitors — coming soon" : undefined}
-          className={cn(
-            "flex cursor-not-allowed select-none items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-medium text-muted-foreground/40",
-            collapsed && "justify-center px-0",
-          )}
-        >
-          <Activity className="size-4 shrink-0" />
-          {!collapsed && (
-            <>
-              <span>Monitors</span>
-              <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary/60">
-                Soon
-              </span>
-            </>
-          )}
-        </div>
       </nav>
 
       {/* User footer with dropdown */}
