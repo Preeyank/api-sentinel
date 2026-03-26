@@ -19,12 +19,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MonitorDialog } from "@/components/dashboard/MonitorDialog";
 import { deleteMonitor, toggleMonitor } from "@/lib/actions/monitors";
+import { ENV_LABELS, type Environment } from "@/lib/constants/monitors";
 
 type Monitor = {
   id: string;
   name: string;
   url: string;
-  environment: string;
+  environment: Environment;
   intervalSec: number;
   expectedStatus: number;
   timeoutMs: number;
@@ -32,12 +33,6 @@ type Monitor = {
   slug: string;
   createdAt: Date;
   lastCheckedAt: Date | null;
-};
-
-const ENV_LABELS: Record<string, string> = {
-  PROD: "Production",
-  STAGING: "Staging",
-  DEV: "Development",
 };
 
 function formatInterval(sec: number): string {
@@ -64,6 +59,9 @@ export function MonitorList({ monitors }: Props) {
     setItems(monitors);
   }, [monitors]);
 
+  const monitorToPause = items.find((m) => m.id === pauseConfirmId) ?? null;
+  const monitorToDelete = items.find((m) => m.id === deleteConfirmId) ?? null;
+
   function openCreate() {
     setEditingMonitor(null);
     setDialogOpen(true);
@@ -75,7 +73,6 @@ export function MonitorList({ monitors }: Props) {
   }
 
   async function handleToggle(id: string, isActive: boolean) {
-    // Optimistic update
     setItems((prev) => prev.map((m) => (m.id === id ? { ...m, isActive } : m)));
     setPauseConfirmId(null);
 
@@ -141,19 +138,17 @@ export function MonitorList({ monitors }: Props) {
               key={monitor.id}
               className="flex items-center gap-4 px-4 py-3.5"
             >
-              {/* Icon */}
               <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
                 <Globe className="size-4 text-muted-foreground" />
               </div>
 
-              {/* Info */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="truncate text-sm font-medium text-foreground">
                     {monitor.name}
                   </p>
                   <Badge variant="secondary" className="shrink-0 text-[10px]">
-                    {ENV_LABELS[monitor.environment] ?? monitor.environment}
+                    {ENV_LABELS[monitor.environment]}
                   </Badge>
                 </div>
                 <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
@@ -165,13 +160,11 @@ export function MonitorList({ monitors }: Props) {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex shrink-0 items-center gap-2">
                 <Switch
                   checked={monitor.isActive}
                   onCheckedChange={(checked) => {
                     if (!checked) {
-                      // Active → inactive: require confirmation
                       setPauseConfirmId(monitor.id);
                     } else {
                       handleToggle(monitor.id, true);
@@ -198,61 +191,64 @@ export function MonitorList({ monitors }: Props) {
                 >
                   <Trash2 className="size-3.5" />
                 </Button>
-
-                {/* Pause confirmation */}
-                <AlertDialog
-                  open={pauseConfirmId === monitor.id}
-                  onOpenChange={(open) => !open && setPauseConfirmId(null)}
-                >
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Pause monitor?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        &ldquo;{monitor.name}&rdquo; will stop sending checks
-                        until it is re-activated.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => handleToggle(monitor.id, false)}
-                      >
-                        Pause monitor
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-
-                {/* Delete confirmation */}
-                <AlertDialog
-                  open={deleteConfirmId === monitor.id}
-                  onOpenChange={(open) => !open && setDeleteConfirmId(null)}
-                >
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete monitor?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will permanently delete &ldquo;{monitor.name}
-                        &rdquo; and all its check results. This cannot be
-                        undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        variant="destructive"
-                        onClick={() => handleDelete(monitor.id)}
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Single pause dialog — hoisted outside the list */}
+      <AlertDialog
+        open={!!pauseConfirmId}
+        onOpenChange={(open) => !open && setPauseConfirmId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Pause monitor?</AlertDialogTitle>
+            <AlertDialogDescription>
+              &ldquo;{monitorToPause?.name}&rdquo; will stop sending checks
+              until it is re-activated.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                pauseConfirmId && handleToggle(pauseConfirmId, false)
+              }
+            >
+              Pause monitor
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Single delete dialog — hoisted outside the list */}
+      <AlertDialog
+        open={!!deleteConfirmId}
+        onOpenChange={(open) => !open && setDeleteConfirmId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete monitor?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete &ldquo;{monitorToDelete?.name}&rdquo;
+              and all its check results. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() =>
+                deleteConfirmId && handleDelete(deleteConfirmId)
+              }
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <MonitorDialog
         open={dialogOpen}

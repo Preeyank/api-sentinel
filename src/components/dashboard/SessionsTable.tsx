@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { authClient, useSession } from "@/lib/auth-client";
 import { formatDate } from "@/lib/utils";
 import { Monitor, Smartphone, Globe, Trash2, ShieldOff } from "lucide-react";
@@ -37,18 +38,29 @@ export function SessionsTable() {
   const { data: currentSessionData } = useSession();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<string | null>(null);
   const [revokingOther, setRevokingOther] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    authClient.listSessions().then(({ data }) => {
-      if (!cancelled) {
-        setSessions((data as Session[]) ?? []);
-        setLoading(false);
-      }
-    });
+    setLoading(true);
+    setError(null);
+    authClient
+      .listSessions()
+      .then(({ data }) => {
+        if (!cancelled) {
+          setSessions((data as Session[]) ?? []);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError("Failed to load sessions. Please refresh the page.");
+          setLoading(false);
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -60,16 +72,26 @@ export function SessionsTable() {
 
   async function revokeSession(token: string) {
     setRevoking(token);
-    await authClient.revokeSession({ token });
-    refresh();
-    setRevoking(null);
+    try {
+      await authClient.revokeSession({ token });
+      refresh();
+    } catch {
+      toast.error("Failed to revoke session");
+    } finally {
+      setRevoking(null);
+    }
   }
 
   async function revokeOtherSessions() {
     setRevokingOther(true);
-    await authClient.revokeOtherSessions();
-    refresh();
-    setRevokingOther(false);
+    try {
+      await authClient.revokeOtherSessions();
+      refresh();
+    } catch {
+      toast.error("Failed to sign out other sessions");
+    } finally {
+      setRevokingOther(false);
+    }
   }
 
   const currentToken = currentSessionData?.session?.token;
@@ -82,6 +104,14 @@ export function SessionsTable() {
           <Skeleton key={i} className="h-[72px] rounded-xl" />
         ))}
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <p className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        {error}
+      </p>
     );
   }
 

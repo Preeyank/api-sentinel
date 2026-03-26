@@ -4,7 +4,6 @@ import {
   Bell,
   BarChart3,
   Zap,
-  ArrowUpRight,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 
@@ -115,13 +114,6 @@ export default function AuthLayout({
           <p className="text-xs text-white/22">
             © {new Date().getFullYear()} API Sentinel. All rights reserved.
           </p>
-          <a
-            href="#"
-            className="flex items-center gap-1 text-xs text-white/32 hover:text-white/60 transition-colors duration-200"
-          >
-            Status page
-            <ArrowUpRight className="size-3" />
-          </a>
         </div>
       </div>
 

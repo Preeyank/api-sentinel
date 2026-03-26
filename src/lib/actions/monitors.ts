@@ -1,9 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getOptionalSession } from "@/lib/session";
 import {
   MonitorFormSchema,
   type MonitorFormValues,
@@ -28,13 +27,14 @@ async function generateSlug(name: string): Promise<string> {
   return candidate;
 }
 
-async function getAuthorizedSession() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  return session;
+async function getOwnedMonitor(id: string, userId: string) {
+  const monitor = await prisma.monitor.findUnique({ where: { id } });
+  if (!monitor || monitor.userId !== userId) return null;
+  return monitor;
 }
 
 export async function createMonitor(values: MonitorFormValues) {
-  const session = await getAuthorizedSession();
+  const session = await getOptionalSession();
   if (!session) return { success: false as const, error: "Unauthorized" };
 
   const parsed = MonitorFormSchema.safeParse(values);
@@ -46,13 +46,13 @@ export async function createMonitor(values: MonitorFormValues) {
 
   const slug = await generateSlug(parsed.data.name);
 
-  await prisma.monitor.create({
-    data: {
-      userId: session.user.id,
-      slug,
-      ...parsed.data,
-    },
-  });
+  try {
+    await prisma.monitor.create({
+      data: { userId: session.user.id, slug, ...parsed.data },
+    });
+  } catch {
+    return { success: false as const, error: "Failed to create monitor" };
+  }
 
   revalidatePath("/dashboard/monitors");
   revalidatePath("/dashboard");
@@ -60,12 +60,11 @@ export async function createMonitor(values: MonitorFormValues) {
 }
 
 export async function updateMonitor(id: string, values: MonitorFormValues) {
-  const session = await getAuthorizedSession();
+  const session = await getOptionalSession();
   if (!session) return { success: false as const, error: "Unauthorized" };
 
-  const existing = await prisma.monitor.findUnique({ where: { id } });
-  if (!existing || existing.userId !== session.user.id)
-    return { success: false as const, error: "Not found" };
+  const existing = await getOwnedMonitor(id, session.user.id);
+  if (!existing) return { success: false as const, error: "Not found" };
 
   const parsed = MonitorFormSchema.safeParse(values);
   if (!parsed.success)
@@ -74,21 +73,28 @@ export async function updateMonitor(id: string, values: MonitorFormValues) {
       error: parsed.error.issues[0]?.message ?? "Invalid input",
     };
 
-  await prisma.monitor.update({ where: { id }, data: parsed.data });
+  try {
+    await prisma.monitor.update({ where: { id }, data: parsed.data });
+  } catch {
+    return { success: false as const, error: "Failed to update monitor" };
+  }
 
   revalidatePath("/dashboard/monitors");
   return { success: true as const };
 }
 
 export async function deleteMonitor(id: string) {
-  const session = await getAuthorizedSession();
+  const session = await getOptionalSession();
   if (!session) return { success: false as const, error: "Unauthorized" };
 
-  const existing = await prisma.monitor.findUnique({ where: { id } });
-  if (!existing || existing.userId !== session.user.id)
-    return { success: false as const, error: "Not found" };
+  const existing = await getOwnedMonitor(id, session.user.id);
+  if (!existing) return { success: false as const, error: "Not found" };
 
-  await prisma.monitor.delete({ where: { id } });
+  try {
+    await prisma.monitor.delete({ where: { id } });
+  } catch {
+    return { success: false as const, error: "Failed to delete monitor" };
+  }
 
   revalidatePath("/dashboard/monitors");
   revalidatePath("/dashboard");
@@ -96,14 +102,17 @@ export async function deleteMonitor(id: string) {
 }
 
 export async function toggleMonitor(id: string, isActive: boolean) {
-  const session = await getAuthorizedSession();
+  const session = await getOptionalSession();
   if (!session) return { success: false as const, error: "Unauthorized" };
 
-  const existing = await prisma.monitor.findUnique({ where: { id } });
-  if (!existing || existing.userId !== session.user.id)
-    return { success: false as const, error: "Not found" };
+  const existing = await getOwnedMonitor(id, session.user.id);
+  if (!existing) return { success: false as const, error: "Not found" };
 
-  await prisma.monitor.update({ where: { id }, data: { isActive } });
+  try {
+    await prisma.monitor.update({ where: { id }, data: { isActive } });
+  } catch {
+    return { success: false as const, error: "Failed to update monitor" };
+  }
 
   revalidatePath("/dashboard/monitors");
   return { success: true as const };

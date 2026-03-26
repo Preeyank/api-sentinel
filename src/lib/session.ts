@@ -7,3 +7,8 @@ export async function getRequiredSession() {
   if (!session) redirect("/login");
   return session;
 }
+
+/** Use inside server actions — returns null instead of redirecting. */
+export async function getOptionalSession() {
+  return auth.api.getSession({ headers: await headers() });
+}

@@ -100,15 +100,7 @@ export function LoginForm() {
             name="password"
             render={({ field, fieldState }) => (
               <Field data-invalid={!!fieldState.error}>
-                <div className="flex items-center justify-between">
-                  <FieldLabel>Password</FieldLabel>
-                  <Link
-                    href="/forgot-password"
-                    className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
+                <FieldLabel>Password</FieldLabel>
                 <Input
                   id="login-password"
                   type="password"

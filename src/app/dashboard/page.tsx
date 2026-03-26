@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getRequiredSession } from "@/lib/session";
 import { Activity, Radio, TrendingUp, AlertTriangle } from "lucide-react";
 import {
@@ -87,10 +88,13 @@ export default async function DashboardPage() {
           Monitors let you track the uptime and response time of your APIs.
           They&apos;ll appear here once you create them.
         </p>
-        <div className="mt-5 flex items-center gap-2 rounded-full bg-muted px-4 py-2 text-xs font-medium text-muted-foreground">
-          <span className="size-1.5 rounded-full bg-amber-400" />
-          Monitors are coming soon
-        </div>
+        <Link
+          href="/dashboard/monitors"
+          className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+        >
+          <Activity className="size-3.5" />
+          Go to Monitors
+        </Link>
       </div>
     </div>
   );

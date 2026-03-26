@@ -3,11 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   ShieldCheck,
-  LayoutDashboard,
-  KeyRound,
-  Activity,
   PanelLeftClose,
   PanelLeftOpen,
   User,
@@ -16,12 +14,7 @@ import {
 import { cn, getInitials, formatPlanLabel } from "@/lib/utils";
 import { signOut } from "@/lib/auth-client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-
-const NAV_ITEMS = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/dashboard/monitors", icon: Activity, label: "Monitors" },
-  { href: "/dashboard/sessions", icon: KeyRound, label: "Sessions" },
-];
+import { NAV_ITEMS } from "@/lib/constants/nav";
 
 type SidebarProps = {
   user: { name: string; email: string };
@@ -51,9 +44,13 @@ export function Sidebar({ user, plan }: SidebarProps) {
   }
 
   async function handleSignOut() {
-    await signOut();
-    router.push("/login");
-    router.refresh();
+    try {
+      await signOut();
+      router.push("/login");
+      router.refresh();
+    } catch {
+      toast.error("Failed to sign out. Please try again.");
+    }
   }
 
   const planLabel = formatPlanLabel(plan);
@@ -67,7 +64,6 @@ export function Sidebar({ user, plan }: SidebarProps) {
     >
       {/* Header: logo/title (hides when collapsed) + always-visible toggle */}
       <div className="flex h-10 shrink-0 items-center px-2 mt-1.5">
-        {/* Logo + name — fade out when collapsed, take no space when collapsed */}
         <div
           className={cn(
             "flex min-w-0 flex-1 items-center gap-2.5 transition-all duration-200",
@@ -81,7 +77,6 @@ export function Sidebar({ user, plan }: SidebarProps) {
             API Sentinel
           </span>
         </div>
-        {/* Toggle — always visible */}
         <button
           onClick={toggle}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -124,7 +119,6 @@ export function Sidebar({ user, plan }: SidebarProps) {
 
       {/* User footer with dropdown */}
       <div ref={menuRef} className="relative border-t">
-        {/* Dropdown menu — renders above the button */}
         {menuOpen && (
           <div className="absolute bottom-full left-0 z-50 mb-1 w-52 overflow-hidden rounded-xl border bg-popover shadow-lg ring-1 ring-border">
             <div className="p-1.5">
@@ -149,7 +143,6 @@ export function Sidebar({ user, plan }: SidebarProps) {
           </div>
         )}
 
-        {/* Trigger button */}
         <button
           onClick={() => setMenuOpen((v) => !v)}
           title={collapsed ? user.name : undefined}
