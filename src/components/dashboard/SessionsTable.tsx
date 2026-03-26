@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { authClient, useSession } from "@/lib/auth-client";
+import { formatDate } from "@/lib/utils";
 import { Monitor, Smartphone, Globe, Trash2, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,16 +31,6 @@ function parseDevice(ua: string | null | undefined): {
   if (/firefox/i.test(ua)) return { label: "Firefox", Icon: Monitor };
   if (/safari/i.test(ua)) return { label: "Safari", Icon: Monitor };
   return { label: "Desktop browser", Icon: Monitor };
-}
-
-function formatDate(d: string | Date): string {
-  return new Date(d).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 export function SessionsTable() {

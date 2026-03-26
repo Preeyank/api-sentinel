@@ -1,6 +1,4 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { getRequiredSession } from "@/lib/session";
 import { Activity, Radio, TrendingUp, AlertTriangle } from "lucide-react";
 import {
   Card,
@@ -11,8 +9,7 @@ import {
 import { prisma } from "@/lib/prisma";
 
 export default async function DashboardPage() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  const session = await getRequiredSession();
 
   const firstName = session.user.name.split(" ")[0];
 

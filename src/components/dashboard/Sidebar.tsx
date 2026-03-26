@@ -13,7 +13,7 @@ import {
   User,
   LogOut,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getInitials, formatPlanLabel } from "@/lib/utils";
 import { signOut } from "@/lib/auth-client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -22,16 +22,6 @@ const NAV_ITEMS = [
   { href: "/dashboard/monitors", icon: Activity, label: "Monitors" },
   { href: "/dashboard/sessions", icon: KeyRound, label: "Sessions" },
 ];
-
-function getInitials(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
 
 type SidebarProps = {
   user: { name: string; email: string };
@@ -66,7 +56,7 @@ export function Sidebar({ user, plan }: SidebarProps) {
     router.refresh();
   }
 
-  const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase();
+  const planLabel = formatPlanLabel(plan);
 
   return (
     <aside

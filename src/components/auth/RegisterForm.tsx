@@ -7,8 +7,8 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
-import { SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
 
+import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,12 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Field,
-  FieldError,
-  FieldLabel,
-  FieldSeparator,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 
 const registerSchema = z
   .object({
@@ -47,9 +42,6 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export function RegisterForm() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
-  const [oauthLoading, setOauthLoading] = useState<"github" | "google" | null>(
-    null,
-  );
 
   const {
     control,
@@ -74,12 +66,6 @@ export function RegisterForm() {
     router.push("/dashboard");
   }
 
-  async function handleOAuth(provider: "github" | "google") {
-    setOauthLoading(provider);
-    await authClient.signIn.social({ provider, callbackURL: "/dashboard" });
-    setOauthLoading(null);
-  }
-
   return (
     <Card className="w-full max-w-sm border-t-2 border-t-primary/50 shadow-[0_8px_40px_oklch(0.47_0.21_264/0.1)] dark:shadow-[0_8px_40px_oklch(0_0_0/0.5)] border-border/50">
       <CardHeader className="space-y-1 pb-5">
@@ -92,38 +78,7 @@ export function RegisterForm() {
       </CardHeader>
 
       <CardContent className="space-y-5">
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleOAuth("github")}
-            disabled={!!oauthLoading || isSubmitting}
-            className="gap-2 border-border/60 hover:bg-accent/80"
-          >
-            {oauthLoading === "github" ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <SiGithub className="size-4" />
-            )}
-            GitHub
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleOAuth("google")}
-            disabled={!!oauthLoading || isSubmitting}
-            className="gap-2 border-border/60 hover:bg-accent/80"
-          >
-            {oauthLoading === "google" ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <SiGoogle className="size-4" />
-            )}
-            Google
-          </Button>
-        </div>
-
-        <FieldSeparator>Or continue with email</FieldSeparator>
+        <OAuthButtons disabled={isSubmitting} />
 
         <form
           onSubmit={handleSubmit(onSubmit)}

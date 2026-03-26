@@ -1,24 +1,19 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { getRequiredSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { cn } from "@/lib/utils";
+import { cn, getInitials, formatPlanLabel } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { ReactNode } from "react";
 
 export default async function ProfilePage() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  const session = await getRequiredSession();
 
   const dbUser = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { role: true, plan: true, createdAt: true, emailVerified: true },
   });
 
-  const planLabel = dbUser?.plan
-    ? dbUser.plan.charAt(0).toUpperCase() + dbUser.plan.slice(1).toLowerCase()
-    : "Free";
+  const planLabel = formatPlanLabel(dbUser?.plan ?? "FREE");
 
   const memberSince = new Date(
     dbUser?.createdAt ?? new Date(),
@@ -28,13 +23,7 @@ export default async function ProfilePage() {
     year: "numeric",
   });
 
-  const initials = session.user.name
-    .trim()
-    .split(/\s+/)
-    .map((n: string) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  const initials = getInitials(session.user.name);
 
   return (
     <div className="max-w-2xl p-6 lg:p-8">
