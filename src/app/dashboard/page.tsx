@@ -12,7 +12,7 @@ import { prisma } from "@/lib/prisma";
 export default async function DashboardPage() {
   const session = await getRequiredSession();
 
-  const firstName = session.user.name.split(" ")[0];
+  const firstName = session.user.name.split(" ")[0] || null;
 
   const monitorCount = await prisma.monitor.count({
     where: { userId: session.user.id },
@@ -23,7 +23,7 @@ export default async function DashboardPage() {
       {/* Greeting */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Welcome back, {firstName}!
+          Welcome back{firstName ? `, ${firstName}` : ""}!
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Your API monitoring dashboard. Add monitors to start tracking uptime.
@@ -76,7 +76,7 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* Empty state */}
+      {/* Placeholder — will show live monitor status once check results exist */}
       <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed">
         <div className="flex size-14 items-center justify-center rounded-2xl bg-muted">
           <Activity className="size-7 text-muted-foreground/50" />

@@ -2,6 +2,7 @@ import { getRequiredSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
+import { DEFAULT_PLAN } from "@/lib/constants/user";
 
 export default async function DashboardLayout({
   children,
@@ -15,7 +16,7 @@ export default async function DashboardLayout({
     select: { plan: true },
   });
 
-  const plan = dbUser?.plan ?? "FREE";
+  const plan = dbUser?.plan ?? DEFAULT_PLAN;
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

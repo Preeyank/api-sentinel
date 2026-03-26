@@ -8,6 +8,8 @@ import {
   type MonitorFormValues,
 } from "@/lib/validations/monitor";
 
+const MAX_SLUG_ATTEMPTS = 100;
+
 async function generateSlug(name: string): Promise<string> {
   const base =
     name
@@ -20,9 +22,15 @@ async function generateSlug(name: string): Promise<string> {
 
   let candidate = base;
   let counter = 1;
-  while (await prisma.monitor.findUnique({ where: { slug: candidate } })) {
+  while (
+    counter <= MAX_SLUG_ATTEMPTS &&
+    (await prisma.monitor.findUnique({ where: { slug: candidate } }))
+  ) {
     candidate = `${base}-${counter}`;
     counter++;
+  }
+  if (counter > MAX_SLUG_ATTEMPTS) {
+    throw new Error(`Could not generate a unique slug for "${name}"`);
   }
   return candidate;
 }

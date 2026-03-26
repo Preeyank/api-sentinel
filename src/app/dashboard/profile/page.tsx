@@ -1,6 +1,7 @@
 import { getRequiredSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { cn, getInitials, formatPlanLabel } from "@/lib/utils";
+import { DEFAULT_PLAN } from "@/lib/constants/user";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { ReactNode } from "react";
@@ -13,7 +14,7 @@ export default async function ProfilePage() {
     select: { role: true, plan: true, createdAt: true, emailVerified: true },
   });
 
-  const planLabel = formatPlanLabel(dbUser?.plan ?? "FREE");
+  const planLabel = formatPlanLabel(dbUser?.plan ?? DEFAULT_PLAN);
 
   const memberSince = new Date(
     dbUser?.createdAt ?? new Date(),

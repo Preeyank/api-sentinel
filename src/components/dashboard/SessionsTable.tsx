@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { authClient, useSession } from "@/lib/auth-client";
 import { formatDate } from "@/lib/utils";
@@ -41,40 +41,29 @@ export function SessionsTable() {
   const [error, setError] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<string | null>(null);
   const [revokingOther, setRevokingOther] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchSessions = useCallback(async () => {
     setLoading(true);
     setError(null);
-    authClient
-      .listSessions()
-      .then(({ data }) => {
-        if (!cancelled) {
-          setSessions((data as Session[]) ?? []);
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError("Failed to load sessions. Please refresh the page.");
-          setLoading(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey]);
+    try {
+      const { data } = await authClient.listSessions();
+      setSessions((data as Session[]) ?? []);
+    } catch {
+      setError("Failed to load sessions. Please refresh the page.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  function refresh() {
-    setRefreshKey((k) => k + 1);
-  }
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
 
   async function revokeSession(token: string) {
     setRevoking(token);
     try {
       await authClient.revokeSession({ token });
-      refresh();
+      fetchSessions();
     } catch {
       toast.error("Failed to revoke session");
     } finally {
@@ -86,7 +75,7 @@ export function SessionsTable() {
     setRevokingOther(true);
     try {
       await authClient.revokeOtherSessions();
-      refresh();
+      fetchSessions();
     } catch {
       toast.error("Failed to sign out other sessions");
     } finally {

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Loader2 } from "lucide-react";
 
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
@@ -21,13 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-
-const loginSchema = z.object({
-  email: z.email("Please enter a valid email"),
-  password: z.string().min(1, "Password is required"),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
+import { loginSchema, type LoginFormValues } from "@/lib/validations/auth";
 
 export function LoginForm() {
   const router = useRouter();
@@ -53,7 +46,6 @@ export function LoginForm() {
       return;
     }
     router.push("/dashboard");
-    router.refresh();
   }
 
   return (

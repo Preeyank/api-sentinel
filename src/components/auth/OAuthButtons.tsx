@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
 import { authClient } from "@/lib/auth-client";
@@ -14,8 +15,17 @@ export function OAuthButtons({ disabled }: { disabled?: boolean }) {
 
   async function handleOAuth(provider: "github" | "google") {
     setOauthLoading(provider);
-    await authClient.signIn.social({ provider, callbackURL: "/dashboard" });
-    setOauthLoading(null);
+    try {
+      const { error } = await authClient.signIn.social({
+        provider,
+        callbackURL: "/dashboard",
+      });
+      if (error) toast.error(error.message ?? "OAuth sign-in failed");
+    } catch {
+      toast.error("OAuth sign-in failed. Please try again.");
+    } finally {
+      setOauthLoading(null);
+    }
   }
 
   return (

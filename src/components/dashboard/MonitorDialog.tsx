@@ -71,8 +71,7 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
     if (!open) return;
     reset(monitor ? monitorToFormValues(monitor) : DEFAULT_VALUES);
     setServerError(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, monitor?.id]);
+  }, [open, monitor?.id, reset]);
 
   async function onSubmit(values: MonitorFormValues) {
     setServerError(null);

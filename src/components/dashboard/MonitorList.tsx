@@ -20,6 +20,7 @@ import {
 import { MonitorDialog } from "@/components/dashboard/MonitorDialog";
 import { deleteMonitor, toggleMonitor } from "@/lib/actions/monitors";
 import { ENV_LABELS, type Environment } from "@/lib/constants/monitors";
+import { formatInterval } from "@/lib/utils";
 
 type Monitor = {
   id: string;
@@ -34,12 +35,6 @@ type Monitor = {
   createdAt: Date;
   lastCheckedAt: Date | null;
 };
-
-function formatInterval(sec: number): string {
-  if (sec < 60) return `${sec}s`;
-  if (sec < 3600) return `${sec / 60}m`;
-  return `${sec / 3600}h`;
-}
 
 type Props = {
   monitors: Monitor[];
@@ -85,7 +80,7 @@ export function MonitorList({ monitors }: Props) {
       setItems((prev) =>
         prev.map((m) => (m.id === id ? { ...m, isActive: !isActive } : m)),
       );
-      toast.error(result.error ?? "Failed to update monitor");
+      toast.error(result.error);
     }
   }
 
@@ -97,7 +92,7 @@ export function MonitorList({ monitors }: Props) {
       toast.success("Monitor deleted");
       router.refresh();
     } else {
-      toast.error(result.error ?? "Failed to delete monitor");
+      toast.error(result.error);
     }
     setDeletingId(null);
     setDeleteConfirmId(null);
