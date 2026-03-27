@@ -1,6 +1,6 @@
 import { getRequiredSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { MonitorList } from "@/components/dashboard/MonitorList";
+import { MonitorList } from "@/components/monitors/MonitorList";
 
 export default async function MonitorsPage() {
   const session = await getRequiredSession();
@@ -8,6 +8,7 @@ export default async function MonitorsPage() {
   const monitors = await prisma.monitor.findMany({
     where: { userId: session.user.id },
     orderBy: { createdAt: "desc" },
+    take: 50,
   });
 
   return (

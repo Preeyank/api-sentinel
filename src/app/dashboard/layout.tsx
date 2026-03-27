@@ -1,7 +1,7 @@
 import { getRequiredSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { Sidebar } from "@/components/dashboard/Sidebar";
-import { TopBar } from "@/components/dashboard/TopBar";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { TopBar } from "@/components/layout/TopBar";
 import { DEFAULT_PLAN } from "@/lib/constants/user";
 
 export default async function DashboardLayout({

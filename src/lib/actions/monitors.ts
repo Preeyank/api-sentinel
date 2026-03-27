@@ -58,7 +58,8 @@ export async function createMonitor(values: MonitorFormValues) {
     await prisma.monitor.create({
       data: { userId: session.user.id, slug, ...parsed.data },
     });
-  } catch {
+  } catch (err) {
+    console.error("[createMonitor]", err);
     return { success: false as const, error: "Failed to create monitor" };
   }
 
@@ -83,7 +84,8 @@ export async function updateMonitor(id: string, values: MonitorFormValues) {
 
   try {
     await prisma.monitor.update({ where: { id }, data: parsed.data });
-  } catch {
+  } catch (err) {
+    console.error("[updateMonitor]", err);
     return { success: false as const, error: "Failed to update monitor" };
   }
 
@@ -100,7 +102,8 @@ export async function deleteMonitor(id: string) {
 
   try {
     await prisma.monitor.delete({ where: { id } });
-  } catch {
+  } catch (err) {
+    console.error("[deleteMonitor]", err);
     return { success: false as const, error: "Failed to delete monitor" };
   }
 
@@ -118,7 +121,8 @@ export async function toggleMonitor(id: string, isActive: boolean) {
 
   try {
     await prisma.monitor.update({ where: { id }, data: { isActive } });
-  } catch {
+  } catch (err) {
+    console.error("[toggleMonitor]", err);
     return { success: false as const, error: "Failed to update monitor" };
   }
 

@@ -1,4 +1,4 @@
-import { SessionsTable } from "@/components/dashboard/SessionsTable";
+import { SessionsTable } from "@/components/sessions/SessionsTable";
 
 export default function SessionsPage() {
   return (

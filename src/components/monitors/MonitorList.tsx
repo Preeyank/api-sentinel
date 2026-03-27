@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MonitorDialog } from "@/components/dashboard/MonitorDialog";
+import { MonitorDialog } from "@/components/monitors/MonitorDialog";
 import { deleteMonitor, toggleMonitor } from "@/lib/actions/monitors";
 import { ENV_LABELS, type Environment } from "@/lib/constants/monitors";
 import { formatInterval } from "@/lib/utils";
