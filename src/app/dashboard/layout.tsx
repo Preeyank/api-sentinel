@@ -1,24 +1,22 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { getRequiredSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { Sidebar } from "@/components/dashboard/Sidebar";
-import { TopBar } from "@/components/dashboard/TopBar";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { TopBar } from "@/components/layout/TopBar";
+import { DEFAULT_PLAN } from "@/lib/constants/user";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  const session = await getRequiredSession();
 
   const dbUser = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { plan: true },
   });
 
-  const plan = dbUser?.plan ?? "FREE";
+  const plan = dbUser?.plan ?? DEFAULT_PLAN;
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

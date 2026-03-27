@@ -2,13 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
-
-const PAGE_TITLES: Record<string, string> = {
-  "/dashboard": "Dashboard",
-  "/dashboard/monitors": "Monitors",
-  "/dashboard/sessions": "Sessions",
-  "/dashboard/profile": "Profile",
-};
+import { PAGE_TITLES } from "@/lib/constants/nav";
 
 export function TopBar() {
   const pathname = usePathname();

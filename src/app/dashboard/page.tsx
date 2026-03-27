@@ -1,6 +1,5 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import Link from "next/link";
+import { getRequiredSession } from "@/lib/session";
 import { Activity, Radio, TrendingUp, AlertTriangle } from "lucide-react";
 import {
   Card,
@@ -11,10 +10,9 @@ import {
 import { prisma } from "@/lib/prisma";
 
 export default async function DashboardPage() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  const session = await getRequiredSession();
 
-  const firstName = session.user.name.split(" ")[0];
+  const firstName = session.user.name.split(" ")[0] || null;
 
   const monitorCount = await prisma.monitor.count({
     where: { userId: session.user.id },
@@ -25,7 +23,7 @@ export default async function DashboardPage() {
       {/* Greeting */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Welcome back, {firstName}!
+          Welcome back{firstName ? `, ${firstName}` : ""}!
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Your API monitoring dashboard. Add monitors to start tracking uptime.
@@ -78,7 +76,7 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* Empty state */}
+      {/* Placeholder — will show live monitor status once check results exist */}
       <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed">
         <div className="flex size-14 items-center justify-center rounded-2xl bg-muted">
           <Activity className="size-7 text-muted-foreground/50" />
@@ -90,10 +88,13 @@ export default async function DashboardPage() {
           Monitors let you track the uptime and response time of your APIs.
           They&apos;ll appear here once you create them.
         </p>
-        <div className="mt-5 flex items-center gap-2 rounded-full bg-muted px-4 py-2 text-xs font-medium text-muted-foreground">
-          <span className="size-1.5 rounded-full bg-amber-400" />
-          Monitors are coming soon
-        </div>
+        <Link
+          href="/dashboard/monitors"
+          className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+        >
+          <Activity className="size-3.5" />
+          Go to Monitors
+        </Link>
       </div>
     </div>
   );

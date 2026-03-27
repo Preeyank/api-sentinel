@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { authClient, useSession } from "@/lib/auth-client";
+import { formatDate } from "@/lib/utils";
 import { Monitor, Smartphone, Globe, Trash2, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,53 +34,53 @@ function parseDevice(ua: string | null | undefined): {
   return { label: "Desktop browser", Icon: Monitor };
 }
 
-function formatDate(d: string | Date): string {
-  return new Date(d).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 export function SessionsTable() {
   const { data: currentSessionData } = useSession();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<string | null>(null);
   const [revokingOther, setRevokingOther] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+
+  const fetchSessions = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data } = await authClient.listSessions();
+      setSessions((data as Session[]) ?? []);
+    } catch {
+      setError("Failed to load sessions. Please refresh the page.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    authClient.listSessions().then(({ data }) => {
-      if (!cancelled) {
-        setSessions((data as Session[]) ?? []);
-        setLoading(false);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey]);
-
-  function refresh() {
-    setRefreshKey((k) => k + 1);
-  }
+    fetchSessions();
+  }, [fetchSessions]);
 
   async function revokeSession(token: string) {
     setRevoking(token);
-    await authClient.revokeSession({ token });
-    refresh();
-    setRevoking(null);
+    try {
+      await authClient.revokeSession({ token });
+      fetchSessions();
+    } catch {
+      toast.error("Failed to revoke session");
+    } finally {
+      setRevoking(null);
+    }
   }
 
   async function revokeOtherSessions() {
     setRevokingOther(true);
-    await authClient.revokeOtherSessions();
-    refresh();
-    setRevokingOther(false);
+    try {
+      await authClient.revokeOtherSessions();
+      fetchSessions();
+    } catch {
+      toast.error("Failed to sign out other sessions");
+    } finally {
+      setRevokingOther(false);
+    }
   }
 
   const currentToken = currentSessionData?.session?.token;
@@ -91,6 +93,14 @@ export function SessionsTable() {
           <Skeleton key={i} className="h-[72px] rounded-xl" />
         ))}
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <p className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        {error}
+      </p>
     );
   }
 

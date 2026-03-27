@@ -5,10 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Loader2 } from "lucide-react";
-import { SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
 
+import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,26 +19,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Field,
-  FieldError,
-  FieldLabel,
-  FieldSeparator,
-} from "@/components/ui/field";
-
-const loginSchema = z.object({
-  email: z.email("Please enter a valid email"),
-  password: z.string().min(1, "Password is required"),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { loginSchema, type LoginFormValues } from "@/lib/validations/auth";
 
 export function LoginForm() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
-  const [oauthLoading, setOauthLoading] = useState<"github" | "google" | null>(
-    null,
-  );
 
   const {
     control,
@@ -61,13 +46,6 @@ export function LoginForm() {
       return;
     }
     router.push("/dashboard");
-    router.refresh();
-  }
-
-  async function handleOAuth(provider: "github" | "google") {
-    setOauthLoading(provider);
-    await authClient.signIn.social({ provider, callbackURL: "/dashboard" });
-    setOauthLoading(null);
   }
 
   return (
@@ -82,38 +60,7 @@ export function LoginForm() {
       </CardHeader>
 
       <CardContent className="space-y-5">
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleOAuth("github")}
-            disabled={!!oauthLoading || isSubmitting}
-            className="gap-2 border-border/60 hover:bg-accent/80"
-          >
-            {oauthLoading === "github" ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <SiGithub className="size-4" />
-            )}
-            GitHub
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleOAuth("google")}
-            disabled={!!oauthLoading || isSubmitting}
-            className="gap-2 border-border/60 hover:bg-accent/80"
-          >
-            {oauthLoading === "google" ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <SiGoogle className="size-4" />
-            )}
-            Google
-          </Button>
-        </div>
-
-        <FieldSeparator>Or continue with email</FieldSeparator>
+        <OAuthButtons disabled={isSubmitting} />
 
         <form
           onSubmit={handleSubmit(onSubmit)}
@@ -145,15 +92,7 @@ export function LoginForm() {
             name="password"
             render={({ field, fieldState }) => (
               <Field data-invalid={!!fieldState.error}>
-                <div className="flex items-center justify-between">
-                  <FieldLabel>Password</FieldLabel>
-                  <Link
-                    href="/forgot-password"
-                    className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
+                <FieldLabel>Password</FieldLabel>
                 <Input
                   id="login-password"
                   type="password"

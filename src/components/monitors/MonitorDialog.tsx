@@ -27,21 +27,8 @@ import {
   type MonitorFormValues,
 } from "@/lib/validations/monitor";
 import { createMonitor, updateMonitor } from "@/lib/actions/monitors";
+import { ENVIRONMENTS, INTERVALS } from "@/lib/constants/monitors";
 import { toast } from "sonner";
-
-const INTERVALS = [
-  { label: "30 seconds", value: 30 },
-  { label: "1 minute", value: 60 },
-  { label: "5 minutes", value: 300 },
-  { label: "10 minutes", value: 600 },
-  { label: "30 minutes", value: 1800 },
-];
-
-const ENVIRONMENTS = [
-  { label: "Production", value: "PROD" },
-  { label: "Staging", value: "STAGING" },
-  { label: "Development", value: "DEV" },
-];
 
 const DEFAULT_VALUES: MonitorFormValues = {
   name: "",
@@ -52,21 +39,18 @@ const DEFAULT_VALUES: MonitorFormValues = {
   timeoutMs: 5000,
 };
 
-type MonitorForDialog = {
-  id: string;
-  name: string;
-  url: string;
-  environment: string;
-  intervalSec: number;
-  expectedStatus: number;
-  timeoutMs: number;
-};
+type MonitorForDialog = { id: string } & MonitorFormValues;
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   monitor?: MonitorForDialog | null;
 };
+
+function monitorToFormValues(monitor: MonitorForDialog): MonitorFormValues {
+  const { id: _id, ...values } = monitor;
+  return values;
+}
 
 export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
   const router = useRouter();
@@ -80,40 +64,14 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
     formState: { errors, isSubmitting },
   } = useForm<MonitorFormValues>({
     resolver: zodResolver(MonitorFormSchema),
-    defaultValues: monitor
-      ? {
-          name: monitor.name,
-          url: monitor.url,
-          environment: monitor.environment as MonitorFormValues["environment"],
-          intervalSec: monitor.intervalSec,
-          expectedStatus: monitor.expectedStatus,
-          timeoutMs: monitor.timeoutMs,
-        }
-      : DEFAULT_VALUES,
+    defaultValues: monitor ? monitorToFormValues(monitor) : DEFAULT_VALUES,
   });
 
   useEffect(() => {
     if (!open) return;
-    reset(
-      monitor
-        ? {
-            name: monitor.name,
-            url: monitor.url,
-            environment:
-              monitor.environment as MonitorFormValues["environment"],
-            intervalSec: monitor.intervalSec,
-            expectedStatus: monitor.expectedStatus,
-            timeoutMs: monitor.timeoutMs,
-          }
-        : DEFAULT_VALUES,
-    );
+    reset(monitor ? monitorToFormValues(monitor) : DEFAULT_VALUES);
     setServerError(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, monitor?.id]);
-
-  function handleOpenChange(open: boolean) {
-    onOpenChange(open);
-  }
+  }, [open, monitor?.id, reset]);
 
   async function onSubmit(values: MonitorFormValues) {
     setServerError(null);
@@ -126,7 +84,7 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
       return;
     }
 
-    handleOpenChange(false);
+    onOpenChange(false);
     toast.success(monitor ? "Monitor updated" : "Monitor created");
     router.refresh();
   }
@@ -134,7 +92,7 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
   const isEdit = !!monitor;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit monitor" : "Add monitor"}</DialogTitle>
@@ -148,8 +106,12 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Name */}
           <div className="space-y-1.5">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" placeholder="My API" {...register("name")} />
+            <Label htmlFor="monitor-name">Name</Label>
+            <Input
+              id="monitor-name"
+              placeholder="My API"
+              {...register("name")}
+            />
             {errors.name && (
               <p className="text-xs text-destructive">{errors.name.message}</p>
             )}
@@ -157,9 +119,9 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
 
           {/* URL */}
           <div className="space-y-1.5">
-            <Label htmlFor="url">URL</Label>
+            <Label htmlFor="monitor-url">URL</Label>
             <Input
-              id="url"
+              id="monitor-url"
               placeholder="https://api.example.com/health"
               {...register("url")}
             />
@@ -231,9 +193,9 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
           {/* Expected Status + Timeout */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="expectedStatus">Expected status</Label>
+              <Label htmlFor="monitor-expectedStatus">Expected status</Label>
               <Input
-                id="expectedStatus"
+                id="monitor-expectedStatus"
                 type="number"
                 {...register("expectedStatus", { valueAsNumber: true })}
               />
@@ -245,9 +207,9 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="timeoutMs">Timeout (ms)</Label>
+              <Label htmlFor="monitor-timeoutMs">Timeout (ms)</Label>
               <Input
-                id="timeoutMs"
+                id="monitor-timeoutMs"
                 type="number"
                 {...register("timeoutMs", { valueAsNumber: true })}
               />
@@ -269,7 +231,7 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => handleOpenChange(false)}
+              onClick={() => onOpenChange(false)}
             >
               Cancel
             </Button>
