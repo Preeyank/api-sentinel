@@ -8,17 +8,7 @@ import { Monitor, Smartphone, Globe, Trash2, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-
-type Session = {
-  id: string;
-  token: string;
-  userId: string;
-  createdAt: string | Date;
-  updatedAt: string | Date;
-  expiresAt: string | Date;
-  ipAddress?: string | null;
-  userAgent?: string | null;
-};
+import type { Session } from "@/types/sessions";
 
 function parseDevice(ua: string | null | undefined): {
   label: string;
