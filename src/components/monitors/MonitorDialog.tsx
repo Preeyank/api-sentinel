@@ -29,6 +29,7 @@ import {
 import { createMonitor, updateMonitor } from "@/lib/actions/monitors";
 import { ENVIRONMENTS, INTERVALS } from "@/lib/constants/monitors";
 import { toast } from "sonner";
+import type { MonitorForDialog } from "@/types/monitors";
 
 const DEFAULT_VALUES: MonitorFormValues = {
   name: "",
@@ -38,8 +39,6 @@ const DEFAULT_VALUES: MonitorFormValues = {
   expectedStatus: 200,
   timeoutMs: 5000,
 };
-
-type MonitorForDialog = { id: string } & MonitorFormValues;
 
 type Props = {
   open: boolean;

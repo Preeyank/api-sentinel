@@ -22,24 +22,10 @@ import { deleteMonitor, toggleMonitor } from "@/lib/actions/monitors";
 import {
   ENV_LABELS,
   ERROR_LABELS,
-  type Environment,
 } from "@/lib/constants/monitors";
 import { formatInterval, timeAgo } from "@/lib/utils";
 import type { CheckOutcome } from "@/types/checks";
-
-type Monitor = {
-  id: string;
-  name: string;
-  url: string;
-  environment: Environment;
-  intervalSec: number;
-  expectedStatus: number;
-  timeoutMs: number;
-  isActive: boolean;
-  slug: string;
-  createdAt: Date;
-  lastCheckedAt: Date | null;
-};
+import type { Monitor } from "@/types/monitors";
 
 type Props = {
   monitors: Monitor[];
