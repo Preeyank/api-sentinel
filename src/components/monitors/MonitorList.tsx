@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, Globe, Activity } from "lucide-react";
+import { Plus, Pencil, Trash2, Globe, Activity, Play } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,8 +19,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MonitorDialog } from "@/components/monitors/MonitorDialog";
 import { deleteMonitor, toggleMonitor } from "@/lib/actions/monitors";
-import { ENV_LABELS, type Environment } from "@/lib/constants/monitors";
-import { formatInterval } from "@/lib/utils";
+import {
+  ENV_LABELS,
+  ERROR_LABELS,
+  type Environment,
+} from "@/lib/constants/monitors";
+import { formatInterval, timeAgo } from "@/lib/utils";
+import type { CheckOutcome } from "@/types/checks";
 
 type Monitor = {
   id: string;
@@ -46,6 +51,7 @@ export function MonitorList({ monitors }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMonitor, setEditingMonitor] = useState<Monitor | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [runningId, setRunningId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [pauseConfirmId, setPauseConfirmId] = useState<string | null>(null);
 
@@ -81,6 +87,28 @@ export function MonitorList({ monitors }: Props) {
         prev.map((m) => (m.id === id ? { ...m, isActive: !isActive } : m)),
       );
       toast.error(result.error);
+    }
+  }
+
+  async function handleRunCheck(id: string) {
+    setRunningId(id);
+    try {
+      const res = await fetch(`/api/monitors/${id}/check`, { method: "POST" });
+      const outcome: CheckOutcome = await res.json();
+
+      if (outcome.ok) {
+        toast.success(`${outcome.statusCode} OK — ${outcome.latencyMs}ms`);
+      } else {
+        const label = outcome.errorType
+          ? ERROR_LABELS[outcome.errorType]
+          : "Check failed";
+        toast.error(`${label} — ${outcome.latencyMs}ms`);
+      }
+      router.refresh();
+    } catch {
+      toast.error("Failed to reach the server");
+    } finally {
+      setRunningId(null);
     }
   }
 
@@ -152,6 +180,8 @@ export function MonitorList({ monitors }: Props) {
                   <span>Every {formatInterval(monitor.intervalSec)}</span>
                   <span>·</span>
                   <span>Status {monitor.expectedStatus}</span>
+                  <span>·</span>
+                  <span>Checked {timeAgo(monitor.lastCheckedAt)}</span>
                 </div>
               </div>
 
@@ -166,6 +196,16 @@ export function MonitorList({ monitors }: Props) {
                     }
                   }}
                 />
+
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title="Run now"
+                  disabled={runningId === monitor.id}
+                  onClick={() => handleRunCheck(monitor.id)}
+                >
+                  <Play className="size-3.5" />
+                </Button>
 
                 <Button
                   variant="ghost"
@@ -235,9 +275,7 @@ export function MonitorList({ monitors }: Props) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={() =>
-                deleteConfirmId && handleDelete(deleteConfirmId)
-              }
+              onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
             >
               Delete
             </AlertDialogAction>
