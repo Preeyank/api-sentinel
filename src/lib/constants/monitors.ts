@@ -10,6 +10,14 @@ export const ENV_LABELS = Object.fromEntries(
   ENVIRONMENTS.map((e) => [e.value, e.label]),
 ) as Record<Environment, string>;
 
+// Maps internal ErrorType enum values to user-facing labels
+export const ERROR_LABELS: Record<string, string> = {
+  TIMEOUT: "Request timed out",
+  DNS_ERROR: "DNS lookup failed",
+  CONNECTION_ERROR: "Connection refused",
+  STATUS_MISMATCH: "Wrong status code",
+};
+
 export const INTERVALS = [
   { label: "30 seconds", value: 30 },
   { label: "1 minute", value: 60 },
