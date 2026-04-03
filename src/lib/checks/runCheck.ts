@@ -61,6 +61,21 @@ async function fetchUrl(url: string, timeoutMs: number) {
   }
 }
 
+/**
+ * Wraps fetchUrl with a single retry for transient CONNECTION_ERROR failures.
+ *
+ * - CONNECTION_ERROR only: DNS failures mean the host doesn't exist (persistent),
+ *   and timeouts would just burn double the budget on a slow endpoint.
+ * - 1 s delay before the retry to let a briefly-flapping connection recover.
+ */
+async function fetchUrlWithRetry(url: string, timeoutMs: number) {
+  const result = await fetchUrl(url, timeoutMs);
+  if (result.networkError !== "CONNECTION_ERROR") return result;
+
+  await new Promise((r) => setTimeout(r, 1_000));
+  return fetchUrl(url, timeoutMs);
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export async function runCheck(
@@ -71,9 +86,9 @@ export async function runCheck(
     where: { id: monitorId },
   });
 
-  // 1. Make the HTTP request
+  // 1. Make the HTTP request (with one retry on transient connection failures)
   const { statusCode, responseSnippet, latencyMs, networkError } =
-    await fetchUrl(monitor.url, monitor.timeoutMs);
+    await fetchUrlWithRetry(monitor.url, monitor.timeoutMs);
 
   // 2. Determine the final error type.
   //    Network errors (timeout, DNS, connection) take priority.
@@ -84,15 +99,27 @@ export async function runCheck(
 
   const ok = errorType === null;
 
-  // 3. Persist everything atomically.
-  //    The open-incident lookup lives inside the transaction so that two
-  //    concurrent checks for the same monitor cannot both find no open
-  //    incident and each create one (duplicate-incident race condition).
+  // 3. If latency alerting is enabled on this monitor (latencyThresholdMs != null),
+  //    a healthy response that exceeds the threshold opens a LATENCY incident
+  //    (distinct from a FAILURE incident) so the two can coexist independently.
+  const latencyWarning =
+    ok &&
+    monitor.latencyThresholdMs !== null &&
+    latencyMs > monitor.latencyThresholdMs;
+
+  // 4. Persist everything atomically.
+  //    Both open-incident lookups (FAILURE and LATENCY) live inside the transaction
+  //    so that two concurrent checks for the same monitor cannot each create a
+  //    duplicate incident (race-condition guard).
   const now = new Date();
 
   await prisma.$transaction(async (tx) => {
-    const openIncident = await tx.incident.findFirst({
-      where: { monitorId, status: "OPEN" },
+    // Separate queries per incident type so FAILURE and LATENCY can coexist
+    const openFailureIncident = await tx.incident.findFirst({
+      where: { monitorId, status: "OPEN", type: "FAILURE" },
+    });
+    const openLatencyIncident = await tx.incident.findFirst({
+      where: { monitorId, status: "OPEN", type: "LATENCY" },
     });
 
     await tx.checkResult.create({
@@ -109,11 +136,10 @@ export async function runCheck(
       },
     });
 
-    // 4. Incident logic:
-    //    - First failure with no open incident → open a new one
-    //    - Recovery with an open incident → close it
-    //    - Ongoing failure or healthy → no change
-    if (!ok && !openIncident) {
+    // ── FAILURE incident lifecycle ──────────────────────────────────────────
+    // First failure with no open FAILURE incident → open one
+    // Recovery with an open FAILURE incident → close it
+    if (!ok && !openFailureIncident) {
       await tx.incident.create({
         data: {
           monitorId,
@@ -122,13 +148,42 @@ export async function runCheck(
           incidentSnapshot: { statusCode, latencyMs, errorType },
         },
       });
-    } else if (ok && openIncident) {
+    } else if (ok && openFailureIncident) {
       await tx.incident.update({
-        where: { id: openIncident.id },
+        where: { id: openFailureIncident.id },
         data: { status: "CLOSED", endedAt: now },
       });
     }
-  });
 
-  return { statusCode, latencyMs, errorType, responseSnippet, ok };
+    // ── LATENCY incident lifecycle ──────────────────────────────────────────
+    // Slow but healthy response with no open LATENCY incident → open one
+    // Latency back to normal with an open LATENCY incident → close it
+    if (latencyWarning && !openLatencyIncident) {
+      await tx.incident.create({
+        data: {
+          monitorId,
+          type: "LATENCY",
+          status: "OPEN",
+          incidentSnapshot: {
+            latencyMs,
+            thresholdMs: monitor.latencyThresholdMs,
+          },
+        },
+      });
+    } else if (!latencyWarning && openLatencyIncident) {
+      await tx.incident.update({
+        where: { id: openLatencyIncident.id },
+        data: { status: "CLOSED", endedAt: now },
+      });
+    }
+  }, { timeout: 15_000 });
+
+  return {
+    statusCode,
+    latencyMs,
+    errorType,
+    responseSnippet,
+    ok,
+    latencyWarning,
+  };
 }
