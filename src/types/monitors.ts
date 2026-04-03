@@ -9,6 +9,7 @@ export type Monitor = {
   intervalSec: number;
   expectedStatus: number;
   timeoutMs: number;
+  latencyThresholdMs: number | null;
   isActive: boolean;
   slug: string;
   createdAt: Date;

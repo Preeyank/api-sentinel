@@ -14,9 +14,52 @@ export default async function DashboardPage() {
 
   const firstName = session.user.name.split(" ")[0] || null;
 
-  const monitorCount = await prisma.monitor.count({
+  // Fetch all monitor IDs for this user so we can scope check/incident queries.
+  const userMonitors = await prisma.monitor.findMany({
     where: { userId: session.user.id },
+    select: { id: true },
   });
+  const monitorIds = userMonitors.map((m) => m.id);
+  const monitorCount = monitorIds.length;
+
+  const now = new Date();
+  const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1_000);
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1_000);
+
+  // Run uptime and incident queries in parallel (only if there are monitors).
+  const [totalChecks, successfulChecks, openIncidentCount] =
+    monitorCount > 0
+      ? await Promise.all([
+          // Total check results in the last 24 h across all of this user's monitors
+          prisma.checkResult.count({
+            where: {
+              monitorId: { in: monitorIds },
+              checkedAt: { gte: twentyFourHoursAgo },
+            },
+          }),
+          // Healthy results (errorType null = correct status + no network error)
+          prisma.checkResult.count({
+            where: {
+              monitorId: { in: monitorIds },
+              checkedAt: { gte: twentyFourHoursAgo },
+              errorType: null,
+            },
+          }),
+          // Open incidents that started within the last 30 days
+          prisma.incident.count({
+            where: {
+              monitorId: { in: monitorIds },
+              status: "OPEN",
+              startedAt: { gte: thirtyDaysAgo },
+            },
+          }),
+        ])
+      : [0, 0, 0];
+
+  const uptimeDisplay =
+    totalChecks > 0
+      ? `${((successfulChecks / totalChecks) * 100).toFixed(1)}%`
+      : null;
 
   return (
     <div className="flex h-full flex-col p-6 lg:p-8">
@@ -51,13 +94,21 @@ export default async function DashboardPage() {
         <Card size="sm">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardDescription>Avg Uptime</CardDescription>
+              <CardDescription>Avg Uptime (24h)</CardDescription>
               <TrendingUp className="size-4 text-muted-foreground/40" />
             </div>
-            <CardTitle className="text-3xl font-bold text-muted-foreground">
-              —
+            <CardTitle
+              className={`text-3xl font-bold ${
+                uptimeDisplay ? "text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              {uptimeDisplay ?? "—"}
             </CardTitle>
-            <CardDescription className="text-xs">No data yet</CardDescription>
+            <CardDescription className="text-xs">
+              {totalChecks === 0
+                ? "No checks yet"
+                : `${successfulChecks} / ${totalChecks} checks passed`}
+            </CardDescription>
           </CardHeader>
         </Card>
         <Card size="sm">
@@ -66,11 +117,19 @@ export default async function DashboardPage() {
               <CardDescription>Incidents (30d)</CardDescription>
               <AlertTriangle className="size-4 text-muted-foreground/40" />
             </div>
-            <CardTitle className="text-3xl font-bold text-foreground">
-              0
+            <CardTitle
+              className={`text-3xl font-bold ${
+                openIncidentCount > 0 ? "text-destructive" : "text-foreground"
+              }`}
+            >
+              {openIncidentCount}
             </CardTitle>
             <CardDescription className="text-xs">
-              No incidents recorded
+              {openIncidentCount === 0
+                ? "No open incidents"
+                : `${openIncidentCount} open incident${
+                    openIncidentCount === 1 ? "" : "s"
+                  }`}
             </CardDescription>
           </CardHeader>
         </Card>
