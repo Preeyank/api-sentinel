@@ -25,3 +25,17 @@ export const INTERVALS = [
   { label: "10 minutes", value: 600 },
   { label: "30 minutes", value: 1800 },
 ] as const;
+
+// Maximum characters stored from an HTTP response body in CheckResult.
+export const RESPONSE_SNIPPET_MAX_LENGTH = 500;
+
+// Prisma's default interactive transaction timeout is 5 s. Our slowest monitors
+// can take up to timeoutMs (default 5 s) + 1 s retry delay = 6 s just for the
+// HTTP fetch, leaving no budget for DB writes. 15 s gives comfortable headroom.
+export const CHECK_TRANSACTION_TIMEOUT_MS = 15_000;
+
+// Maximum number of health checks that may run concurrently in the cron worker.
+export const CRON_CONCURRENCY = 5;
+
+// Default latency threshold applied when a user first enables latency alerting.
+export const DEFAULT_LATENCY_THRESHOLD_MS = 2_000;

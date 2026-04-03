@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import type { ErrorType } from "@/generated/prisma/enums";
 import type { CheckOutcome } from "@/types/checks";
+import {
+  RESPONSE_SNIPPET_MAX_LENGTH,
+  CHECK_TRANSACTION_TIMEOUT_MS,
+} from "@/lib/constants/monitors";
 
 export type { CheckOutcome };
-
-const RESPONSE_SNIPPET_MAX_LENGTH = 500;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -176,7 +178,7 @@ export async function runCheck(
         data: { status: "CLOSED", endedAt: now },
       });
     }
-  }, { timeout: 15_000 });
+  }, { timeout: CHECK_TRANSACTION_TIMEOUT_MS });
 
   return {
     statusCode,

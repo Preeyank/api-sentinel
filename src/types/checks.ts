@@ -6,6 +6,6 @@ export type CheckOutcome = {
   errorType: ErrorType | null;
   responseSnippet: string | null;
   ok: boolean;
-  /** True when the response was healthy but latency exceeded 75 % of the monitor's timeout. */
+  /** True when the response was healthy but latency exceeded the monitor's configured latencyThresholdMs. */
   latencyWarning: boolean;
 };

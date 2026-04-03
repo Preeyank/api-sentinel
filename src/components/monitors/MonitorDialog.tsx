@@ -27,7 +27,11 @@ import {
   type MonitorFormValues,
 } from "@/lib/validations/monitor";
 import { createMonitor, updateMonitor } from "@/lib/actions/monitors";
-import { ENVIRONMENTS, INTERVALS } from "@/lib/constants/monitors";
+import {
+  ENVIRONMENTS,
+  INTERVALS,
+  DEFAULT_LATENCY_THRESHOLD_MS,
+} from "@/lib/constants/monitors";
 import { toast } from "sonner";
 import type { MonitorForDialog } from "@/types/monitors";
 import { Switch } from "@/components/ui/switch";
@@ -248,7 +252,7 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
               <Switch
                 checked={latencyThresholdMs !== null}
                 onCheckedChange={(checked) =>
-                  setValue("latencyThresholdMs", checked ? 2000 : null)
+                  setValue("latencyThresholdMs", checked ? DEFAULT_LATENCY_THRESHOLD_MS : null)
                 }
               />
             </div>

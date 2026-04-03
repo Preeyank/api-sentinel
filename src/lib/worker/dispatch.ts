@@ -2,13 +2,7 @@ import pLimit from "p-limit";
 import { prisma } from "@/lib/prisma";
 import { runCheck } from "@/lib/checks/runCheck";
 import type { CronRunSummary } from "@/types/worker";
-
-/**
- * Maximum number of HTTP health checks that may run concurrently.
- * Keeping this conservative (5) avoids saturating the outbound connection
- * pool on the serverless function and limits blast radius on target servers.
- */
-const CONCURRENCY = 5;
+import { CRON_CONCURRENCY } from "@/lib/constants/monitors";
 
 /**
  * Queries all active monitors whose nextCheckAt is in the past, then runs
@@ -28,7 +22,7 @@ export async function dispatchDueChecks(): Promise<CronRunSummary> {
     select: { id: true },
   });
 
-  const limit = pLimit(CONCURRENCY);
+  const limit = pLimit(CRON_CONCURRENCY);
   let failures = 0;
 
   await Promise.all(
