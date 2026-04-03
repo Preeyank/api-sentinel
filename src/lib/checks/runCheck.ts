@@ -31,7 +31,7 @@ function classifyNetworkError(err: unknown): ErrorType {
 /**
  * Performs the HTTP request and enforces a hard timeout via AbortController.
  * Returns the raw HTTP result; status-code correctness is checked separately
- * in runCheck so this function stays pure and reusable.
+ * by the caller so this function stays pure and reusable.
  */
 async function fetchUrl(url: string, timeoutMs: number) {
   const controller = new AbortController();
