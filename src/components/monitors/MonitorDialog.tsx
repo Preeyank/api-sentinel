@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
@@ -30,6 +30,7 @@ import { createMonitor, updateMonitor } from "@/lib/actions/monitors";
 import { ENVIRONMENTS, INTERVALS } from "@/lib/constants/monitors";
 import { toast } from "sonner";
 import type { MonitorForDialog } from "@/types/monitors";
+import { Switch } from "@/components/ui/switch";
 
 const DEFAULT_VALUES: MonitorFormValues = {
   name: "",
@@ -38,6 +39,7 @@ const DEFAULT_VALUES: MonitorFormValues = {
   intervalSec: 60,
   expectedStatus: 200,
   timeoutMs: 5000,
+  latencyThresholdMs: null,
 };
 
 type Props = {
@@ -47,8 +49,15 @@ type Props = {
 };
 
 function monitorToFormValues(monitor: MonitorForDialog): MonitorFormValues {
-  const { id: _id, ...values } = monitor;
-  return values;
+  return {
+    name: monitor.name,
+    url: monitor.url,
+    environment: monitor.environment,
+    intervalSec: monitor.intervalSec,
+    expectedStatus: monitor.expectedStatus,
+    timeoutMs: monitor.timeoutMs,
+    latencyThresholdMs: monitor.latencyThresholdMs,
+  };
 }
 
 export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
@@ -60,17 +69,24 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
     handleSubmit,
     control,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<MonitorFormValues>({
     resolver: zodResolver(MonitorFormSchema),
     defaultValues: monitor ? monitorToFormValues(monitor) : DEFAULT_VALUES,
   });
 
+  const latencyThresholdMs = useWatch({ control, name: "latencyThresholdMs" });
+
   useEffect(() => {
     if (!open) return;
     reset(monitor ? monitorToFormValues(monitor) : DEFAULT_VALUES);
-    setServerError(null);
-  }, [open, monitor?.id, reset]);
+  }, [open, monitor, reset]);
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (nextOpen) setServerError(null);
+    onOpenChange(nextOpen);
+  }
 
   async function onSubmit(values: MonitorFormValues) {
     setServerError(null);
@@ -91,7 +107,7 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
   const isEdit = !!monitor;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit monitor" : "Add monitor"}</DialogTitle>
@@ -218,6 +234,41 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
                 </p>
               )}
             </div>
+          </div>
+
+          {/* Latency alerting */}
+          <div className="space-y-3 rounded-lg border p-3">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Latency alerting</Label>
+                <p className="text-xs text-muted-foreground">
+                  Open an incident when response time exceeds a threshold.
+                </p>
+              </div>
+              <Switch
+                checked={latencyThresholdMs !== null}
+                onCheckedChange={(checked) =>
+                  setValue("latencyThresholdMs", checked ? 2000 : null)
+                }
+              />
+            </div>
+            {latencyThresholdMs !== null && (
+              <div className="space-y-1.5">
+                <Label htmlFor="monitor-latencyThresholdMs">
+                  Threshold (ms)
+                </Label>
+                <Input
+                  id="monitor-latencyThresholdMs"
+                  type="number"
+                  {...register("latencyThresholdMs", { valueAsNumber: true })}
+                />
+                {errors.latencyThresholdMs && (
+                  <p className="text-xs text-destructive">
+                    {errors.latencyThresholdMs.message}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {serverError && (

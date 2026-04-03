@@ -10,6 +10,7 @@ export const MonitorFormSchema = z.object({
   intervalSec: z.number({ error: "Interval is required" }),
   expectedStatus: z.number().int().min(100, "Min 100").max(599, "Max 599"),
   timeoutMs: z.number().int().min(1000, "Min 1000ms").max(30000, "Max 30000ms"),
+  latencyThresholdMs: z.number().int().min(100, "Min 100ms").max(29000, "Max 29000ms").nullable(),
 });
 
 export type MonitorFormValues = z.infer<typeof MonitorFormSchema>;
