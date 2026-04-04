@@ -58,10 +58,13 @@ export function Sidebar({ user, plan }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "hidden h-full shrink-0 flex-col border-r bg-sidebar md:flex overflow-visible transition-[width] duration-200 ease-in-out",
+        "relative hidden h-full shrink-0 flex-col border-r bg-sidebar md:flex overflow-visible transition-[width] duration-200 ease-in-out",
         collapsed ? "w-14" : "w-60",
       )}
     >
+      {/* Decorative top glow — visible in both modes, more prominent in dark */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-primary/[0.06] to-transparent" aria-hidden="true" />
+
       {/* Header: logo/title (hides when collapsed) + always-visible toggle */}
       <div className="flex h-10 shrink-0 items-center px-2 mt-1.5">
         <div
@@ -70,7 +73,7 @@ export function Sidebar({ user, plan }: SidebarProps) {
             collapsed ? "w-0 overflow-hidden opacity-0" : "opacity-100",
           )}
         >
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 shadow-sm ring-2 ring-primary/30">
             <ShieldCheck className="size-4 text-primary" />
           </div>
           <span className="whitespace-nowrap text-sm font-semibold tracking-tight text-sidebar-foreground">
@@ -103,12 +106,12 @@ export function Sidebar({ user, plan }: SidebarProps) {
                 "relative flex items-center gap-3 overflow-hidden rounded-lg px-2.5 py-2.5 text-sm font-medium transition-all duration-150",
                 collapsed && "justify-center px-0",
                 active
-                  ? "bg-primary/10 text-primary"
+                  ? "bg-primary/10 text-primary ring-1 ring-primary/15"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
               )}
             >
               {active && (
-                <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-primary" />
+                <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-primary" />
               )}
               <Icon className="size-4 shrink-0" />
               {!collapsed && label}
