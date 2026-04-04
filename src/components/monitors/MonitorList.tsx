@@ -23,7 +23,19 @@ import {
   ENV_LABELS,
   ERROR_LABELS,
 } from "@/lib/constants/monitors";
-import { formatInterval, timeAgo } from "@/lib/utils";
+
+const ENV_ICON_COLORS = {
+  PROD: "bg-blue-500/10 text-blue-500",
+  STAGING: "bg-amber-500/10 text-amber-500",
+  DEV: "bg-violet-500/10 text-violet-500",
+} as const;
+
+const ENV_BADGE_CLASSES = {
+  PROD: "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  STAGING: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  DEV: "border-violet-500/30 bg-violet-500/10 text-violet-600 dark:text-violet-400",
+} as const;
+import { cn, formatInterval, timeAgo } from "@/lib/utils";
 import type { CheckOutcome } from "@/types/checks";
 import type { Monitor } from "@/types/monitors";
 
@@ -145,10 +157,17 @@ export function MonitorList({ monitors }: Props) {
           {items.map((monitor) => (
             <div
               key={monitor.id}
-              className="flex items-center gap-4 px-4 py-3.5"
+              className="flex items-center gap-4 border-l-2 border-l-transparent px-4 py-3.5 transition-colors hover:bg-muted hover:border-l-primary/60"
             >
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-                <Globe className="size-4 text-muted-foreground" />
+              <div className={cn("relative flex size-9 shrink-0 items-center justify-center rounded-lg", ENV_ICON_COLORS[monitor.environment])}>
+                <Globe className="size-4" />
+                {monitor.isActive && (
+                  <span className="absolute -right-0.5 -top-0.5 size-2.5 animate-ping rounded-full bg-emerald-500 opacity-60" />
+                )}
+                <span className={cn(
+                  "absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-card",
+                  monitor.isActive ? "bg-emerald-500" : "bg-muted-foreground/40",
+                )} />
               </div>
 
               <div className="min-w-0 flex-1">
@@ -156,7 +175,7 @@ export function MonitorList({ monitors }: Props) {
                   <p className="truncate text-sm font-medium text-foreground">
                     {monitor.name}
                   </p>
-                  <Badge variant="secondary" className="shrink-0 text-[10px]">
+                  <Badge variant="outline" className={cn("shrink-0 text-[10px]", ENV_BADGE_CLASSES[monitor.environment])}>
                     {ENV_LABELS[monitor.environment]}
                   </Badge>
                 </div>

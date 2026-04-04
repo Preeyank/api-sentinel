@@ -1,12 +1,8 @@
 import Link from "next/link";
 import { getRequiredSession } from "@/lib/session";
 import { Activity, Radio, TrendingUp, AlertTriangle } from "lucide-react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { TiltCard } from "@/components/ui/tilt-card";
 import { prisma } from "@/lib/prisma";
 
 export default async function DashboardPage() {
@@ -61,12 +57,20 @@ export default async function DashboardPage() {
       ? `${((successfulChecks / totalChecks) * 100).toFixed(1)}%`
       : null;
 
+  const uptimePercent = totalChecks > 0 ? (successfulChecks / totalChecks) * 100 : null;
+  const uptimeState: "great" | "poor" | "empty" =
+    uptimePercent === null ? "empty" : uptimePercent > 80 ? "great" : "poor";
+
   return (
     <div className="flex h-full flex-col p-6 lg:p-8">
       {/* Greeting */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Welcome back{firstName ? `, ${firstName}` : ""}!
+          {firstName ? (
+            <>Welcome back, <span className="text-primary">{firstName}</span>!</>
+          ) : (
+            "Welcome back!"
+          )}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Your API monitoring dashboard. Add monitors to start tracking uptime.
@@ -75,64 +79,90 @@ export default async function DashboardPage() {
 
       {/* Stat cards */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card size="sm">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardDescription>Monitors</CardDescription>
-              <Radio className="size-4 text-muted-foreground/40" />
+
+        {/* Monitors */}
+        <TiltCard>
+          <div className="relative overflow-hidden rounded-xl border bg-card p-5 shadow-sm">
+            <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">Monitors</span>
+              <div className="flex size-7 items-center justify-center rounded-lg bg-blue-500/10">
+                <Radio className="size-3.5 text-blue-500" />
+              </div>
             </div>
-            <CardTitle className="text-3xl font-bold text-foreground">
-              {monitorCount}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              {monitorCount === 0
-                ? "No monitors configured"
-                : `${monitorCount} configured`}
-            </CardDescription>
-          </CardHeader>
-        </Card>
-        <Card size="sm">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardDescription>Avg Uptime (24h)</CardDescription>
-              <TrendingUp className="size-4 text-muted-foreground/40" />
+            <p className="text-3xl font-bold text-foreground">{monitorCount}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {monitorCount === 0 ? "No monitors configured" : `${monitorCount} configured`}
+            </p>
+          </div>
+        </TiltCard>
+
+        {/* Uptime — green above 80%, red at or below */}
+        <TiltCard>
+          <div className="relative overflow-hidden rounded-xl border bg-card p-5 shadow-sm">
+            <div className={cn(
+              "absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent to-transparent",
+              uptimeState === "great" && "via-success",
+              uptimeState === "poor"  && "via-destructive",
+              uptimeState === "empty" && "via-muted-foreground/30",
+            )} />
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">Avg Uptime (24h)</span>
+              <div className={cn(
+                "flex size-7 items-center justify-center rounded-lg",
+                uptimeState === "great" && "bg-success/10",
+                uptimeState === "poor"  && "bg-destructive/10",
+                uptimeState === "empty" && "bg-muted",
+              )}>
+                <TrendingUp className={cn(
+                  "size-3.5",
+                  uptimeState === "great" && "text-success",
+                  uptimeState === "poor"  && "text-destructive",
+                  uptimeState === "empty" && "text-muted-foreground",
+                )} />
+              </div>
             </div>
-            <CardTitle
-              className={`text-3xl font-bold ${
-                uptimeDisplay ? "text-foreground" : "text-muted-foreground"
-              }`}
-            >
+            <p className={cn(
+              "text-3xl font-bold",
+              uptimeState === "great" && "text-foreground",
+              uptimeState === "poor"  && "text-destructive",
+              uptimeState === "empty" && "text-muted-foreground",
+            )}>
               {uptimeDisplay ?? "—"}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              {totalChecks === 0
-                ? "No checks yet"
-                : `${successfulChecks} / ${totalChecks} checks passed`}
-            </CardDescription>
-          </CardHeader>
-        </Card>
-        <Card size="sm">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardDescription>Incidents (30d)</CardDescription>
-              <AlertTriangle className="size-4 text-muted-foreground/40" />
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {totalChecks === 0 ? "No checks yet" : `${successfulChecks} / ${totalChecks} checks passed`}
+            </p>
+          </div>
+        </TiltCard>
+
+        {/* Incidents */}
+        <TiltCard>
+          <div className="relative overflow-hidden rounded-xl border bg-card p-5 shadow-sm">
+            <div className={cn(
+              "absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent to-transparent",
+              openIncidentCount > 0 ? "via-destructive" : "via-success",
+            )} />
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">Incidents (30d)</span>
+              <div className={cn(
+                "flex size-7 items-center justify-center rounded-lg",
+                openIncidentCount > 0 ? "bg-destructive/10" : "bg-success/10",
+              )}>
+                <AlertTriangle className={cn("size-3.5", openIncidentCount > 0 ? "text-destructive" : "text-success")} />
+              </div>
             </div>
-            <CardTitle
-              className={`text-3xl font-bold ${
-                openIncidentCount > 0 ? "text-destructive" : "text-foreground"
-              }`}
-            >
+            <p className={cn("text-3xl font-bold", openIncidentCount > 0 ? "text-destructive" : "text-foreground")}>
               {openIncidentCount}
-            </CardTitle>
-            <CardDescription className="text-xs">
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
               {openIncidentCount === 0
                 ? "No open incidents"
-                : `${openIncidentCount} open incident${
-                    openIncidentCount === 1 ? "" : "s"
-                  }`}
-            </CardDescription>
-          </CardHeader>
-        </Card>
+                : `${openIncidentCount} open incident${openIncidentCount === 1 ? "" : "s"}`}
+            </p>
+          </div>
+        </TiltCard>
+
       </div>
 
       {/* Placeholder — will show live monitor status once check results exist */}

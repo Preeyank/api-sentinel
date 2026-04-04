@@ -9,7 +9,8 @@ export function TopBar() {
   const title = PAGE_TITLES[pathname] ?? "Dashboard";
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b px-6">
+    <header className="relative flex h-14 shrink-0 items-center justify-between px-6">
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       <span className="text-sm font-semibold text-foreground">{title}</span>
       <ThemeToggle />
     </header>

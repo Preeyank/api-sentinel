@@ -22,6 +22,8 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -72,7 +74,9 @@
   --chart-4: oklch(0.488 0.243 264.376);
   --chart-5: oklch(0.424 0.199 265.638);
   --radius: 0.75rem;
-  --sidebar: oklch(0.985 0 0);
+  --success: oklch(0.62 0.17 145);
+  --warning: oklch(0.72 0.18 75);
+  --sidebar: oklch(0.952 0.013 264);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
@@ -106,6 +110,8 @@
   --chart-3: oklch(0.546 0.245 262.881);
   --chart-4: oklch(0.488 0.243 264.376);
   --chart-5: oklch(0.424 0.199 265.638);
+  --success: oklch(0.65 0.18 145);
+  --warning: oklch(0.75 0.18 75);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -126,4 +132,13 @@
   html {
     @apply font-sans;
   }
+}
+
+/* ── Auth screen animations ─────────────────────────────────────────────────── */
+
+/* Slow breathe for the form panel glow.                                        */
+/* Floor is 0.35 so the glow stays visible in light mode at its minimum.        */
+@keyframes auth-glow-pulse {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(1.12); }
 }

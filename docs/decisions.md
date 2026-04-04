@@ -181,3 +181,33 @@ The Zod schema in `src/lib/validations/monitor.ts` also received the field:
 `RESPONSE_SNIPPET_MAX_LENGTH`, `CHECK_TRANSACTION_TIMEOUT_MS`, `CRON_CONCURRENCY`,
 `DEFAULT_LATENCY_THRESHOLD_MS`. One place to find all tunable parameters. The
 rule: if a number appears in logic and has a non-obvious meaning, it belongs here.
+
+---
+
+## UI Polish
+
+**`--success` and `--warning` semantic tokens in `globals.css`**
+Rather than hardcoding `text-emerald-500` or `text-amber-500` throughout the UI,
+two semantic tokens (`--success`, `--warning`) are defined in `:root` and `.dark`
+and mapped through `@theme inline`. This means dark-mode variants are automatic
+and there is one place to change the colour if the design evolves.
+
+**`TiltCard` uses direct DOM mutation, not React state**
+The 3D tilt effect on dashboard stat cards updates `el.style.transform` directly
+inside `onMouseMove` instead of calling `setState`. Calling `setState` on every
+`mousemove` would cause a React re-render at 60fps, which is wasteful for a
+purely visual effect. Direct mutation keeps the component a thin wrapper with
+zero render cost during interaction.
+
+**Uptime threshold is 80%, not a percentage band**
+The uptime card shows green above 80% and red at or below. A two-state threshold
+was chosen over a three-state band (green/amber/red) to keep the signal clear —
+either your APIs are healthy or they are not. 80% is a deliberately low floor;
+anything below it represents significant outage time (more than 4.8 hours/day).
+
+**Environment colours are co-located with the component, not in `constants/`**
+`ENV_ICON_COLORS` and `ENV_BADGE_CLASSES` live at the top of `MonitorList.tsx`
+rather than in `src/lib/constants/monitors.ts`. They are Tailwind class strings —
+purely presentational — and have no meaning outside that one component. Putting
+them in the constants file would imply they are shared configuration, which they
+are not.

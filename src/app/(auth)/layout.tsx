@@ -121,6 +121,13 @@ export default function AuthLayout({
       <div className="flex flex-1 flex-col relative">
         {/* Subtle dot grid — light only */}
         <div className="absolute inset-0 bg-[radial-gradient(circle,oklch(0.5_0.12_264/0.07)_1px,transparent_1px)] bg-[size:24px_24px] dark:bg-[radial-gradient(circle,oklch(1_0_0/0.03)_1px,transparent_1px)]" />
+        {/* Pulsing glow behind the form card — always visible regardless of     */}
+        {/* viewport width since this panel is never hidden.                      */}
+        <div
+          aria-hidden="true"
+          style={{ animation: "auth-glow-pulse 4s ease-in-out infinite" }}
+          className="pointer-events-none absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary blur-3xl"
+        />
 
         <div className="relative flex items-center justify-between p-4 pl-6">
           {/* Mobile logo */}
