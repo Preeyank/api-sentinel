@@ -12,6 +12,10 @@ DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
 # Generate with: openssl rand -base64 32
 BETTER_AUTH_SECRET=""
 
+# Base URL of the app — used for OAuth callbacks
+# Local: http://localhost:3000 | Production: https://your-domain.vercel.app
+BETTER_AUTH_URL=""
+
 # GitHub OAuth app (github.com/settings/developers)
 GITHUB_CLIENT_ID=""
 GITHUB_CLIENT_SECRET=""
@@ -64,10 +68,10 @@ Vercel injects the `Authorization` header from your project env vars — no extr
 ## Local Development
 
 ```bash
-pnpm install       # install dependencies
-pnpm dev           # start dev server at http://localhost:3000
-pnpm lint          # run ESLint
-pnpm build         # production build
+npm install        # install dependencies
+npm run dev        # start dev server at http://localhost:3000
+npm run lint       # run ESLint
+npm run build      # production build
 ```
 
 ---

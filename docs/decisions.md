@@ -14,13 +14,13 @@ The tradeoff is cold-start latency on the first query after idle; acceptable for
 a monitoring tool that has continuous traffic from the cron worker.
 
 **Custom Prisma output path (`src/generated/prisma/`)**
-Prisma defaults to generating the client inside `node_modules`. We override this
+Prisma defaults to generating the client inside `node_modules`. I override this
 to `src/generated/prisma/` so TypeScript can resolve the generated types through
 the `@/` path alias without any extra tsconfig gymnastics. The folder is
 `.gitignore`d — it is always regenerated from `schema.prisma`.
 
 **SSL enforced on PG pool (`rejectUnauthorized: true`)**
-Neon requires SSL. We set this explicitly rather than relying on the connection
+Neon requires SSL. I set this explicitly rather than relying on the connection
 string parameter so it's impossible to accidentally turn off.
 
 **`next.config.ts` kept minimal**
@@ -36,7 +36,7 @@ Auth.js requires you to pick a session strategy (JWT vs DB), configure an
 adapter, and manually define the User/Session/Account schema. Better Auth ships
 with a Prisma adapter that owns its own schema migration, handles OAuth token
 storage, and has first-class TypeScript types. The migration happened because
-Auth.js's Prisma adapter had friction with our custom `User` fields (role, plan).
+Auth.js's Prisma adapter had friction with the custom `User` fields (role, plan).
 
 **`requireEnv()` guard in `auth.ts`**
 Crashes the server at startup (not at runtime) if `GITHUB_CLIENT_ID`,
@@ -60,7 +60,7 @@ No landing page built. `/` reads the session and bounces to `/dashboard` or
 
 **Dashboard layout fetches `plan` from DB separately**
 Better Auth's session object only carries the fields Better Auth manages
-(id, name, email, emailVerified, image). Our custom `plan` field is an app-level
+(id, name, email, emailVerified, image). The custom `plan` field is an app-level
 concern. The layout queries `prisma.user.findUnique({ select: { plan: true } })`
 every render and falls back to `DEFAULT_PLAN` if the query returns null.
 
@@ -106,13 +106,13 @@ serve the Play button. It intentionally doesn't touch `nextCheckAt`
 (`updateNextCheckAt: false`).
 
 **`redirect: "follow"` on fetch**
-We follow HTTP redirects and record the final status code. A 301 that lands on a
-200 is healthy. A monitor that points to a redirecting URL is valid — we don't
-penalise redirect chains.
+I follow HTTP redirects and record the final status code. A 301 that lands on a
+200 is healthy. A monitor that points to a redirecting URL is valid — redirect
+chains are not penalised.
 
 **Response snippet truncated before the DB write**
 `text.slice(0, 500)` happens in `fetchUrl()`, not in the Prisma `create()` call.
-This means we never put a multi-MB response body through the serialisation
+This means multi-MB response bodies never pass through the serialisation
 pipeline. The DB column is also capped at `@db.VarChar(500)` as a second layer.
 
 **Transaction isolation for incident deduplication**
@@ -139,7 +139,7 @@ Vercel free-tier cron invocation limits — acceptable for now.
 
 **Vercel Cron fires GET, not POST**
 This is a Vercel constraint. The cron route is a `GET` handler. To prevent
-accidental public access, we validate `Authorization: Bearer CRON_SECRET` before
+accidental public access, the route validates `Authorization: Bearer CRON_SECRET` before
 doing anything. Vercel injects this header automatically in production from the
 project's env vars.
 
@@ -181,6 +181,43 @@ The Zod schema in `src/lib/validations/monitor.ts` also received the field:
 `RESPONSE_SNIPPET_MAX_LENGTH`, `CHECK_TRANSACTION_TIMEOUT_MS`, `CRON_CONCURRENCY`,
 `DEFAULT_LATENCY_THRESHOLD_MS`. One place to find all tunable parameters. The
 rule: if a number appears in logic and has a non-obvious meaning, it belongs here.
+
+---
+
+---
+
+## Worker Architecture — BullMQ Evaluated, Deferred
+
+During the Day 5 review, I identified that Vercel's free tier caps serverless
+functions at 10 seconds. With `CRON_CONCURRENCY = 5` and each check taking up to
+`timeoutMs` (5 s) + 1 s retry = 6 s per batch, a user with many monitors could
+in theory hit this limit mid-dispatch.
+
+**Why I evaluated BullMQ + Railway:**
+A persistent Node.js worker process on Railway with BullMQ as the job queue and
+Redis as the broker would eliminate the serverless timeout entirely. The scheduler
+would enqueue one BullMQ job per due monitor (with `jobId = monitorId` for
+deduplication); each job calls `runCheck()` independently with no shared budget.
+`runCheck()` itself would be unchanged.
+
+**Why I deferred it:**
+At current scale (tens of monitors, free-tier usage), the 10-second limit is not
+a real constraint in practice. The right order is: ship the product end-to-end,
+validate it works, then migrate the worker layer. Premature infrastructure
+investment before the product has real traffic is waste.
+
+**Migration path when the time comes:**
+1. Add a `/worker` directory at the repo root with its own `package.json` and
+   `tsconfig.json` (CommonJS output, not Next.js bundler mode).
+2. Create `redis.ts` (ioredis factory), `queue.ts` (BullMQ Queue), `processor.ts`
+   (calls `runCheck`), `scheduler.ts` (node-cron, enqueues due monitors),
+   `worker-process.ts` (BullMQ Worker, concurrency 5), `index.ts` (entry point).
+3. Add a `Dockerfile` and `railway.toml`. Deploy to Railway with a Redis service.
+4. Gate the existing Vercel Cron route on a `WORKER_MODE=bullmq` env var so it
+   becomes a no-op but still fires as a liveness probe.
+5. Set `WORKER_MODE=bullmq` in Vercel env vars to activate the Railway worker.
+
+`runCheck.ts`, `dispatch.ts`, the Prisma schema, and all types remain unchanged.
 
 ---
 
