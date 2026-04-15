@@ -39,3 +39,12 @@ export const CRON_CONCURRENCY = 5;
 
 // Default latency threshold applied when a user first enables latency alerting.
 export const DEFAULT_LATENCY_THRESHOLD_MS = 2_000;
+
+export type MonitorStatus = "UP" | "DOWN" | "PAUSED" | "UNKNOWN";
+
+export const STATUS_LABELS: Record<MonitorStatus, string> = {
+  UP: "Up",
+  DOWN: "Down",
+  PAUSED: "Paused",
+  UNKNOWN: "Unknown",
+};
