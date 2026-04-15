@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-} from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
@@ -41,8 +35,15 @@ export function LatencyChart({ data }: { data: LatencyDataPoint[] }) {
 
   return (
     <ChartContainer config={chartConfig} className="h-[180px] w-full">
-      <LineChart data={ordered} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border/40" />
+      <LineChart
+        data={ordered}
+        margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
+      >
+        <CartesianGrid
+          strokeDasharray="3 3"
+          vertical={false}
+          className="stroke-border/40"
+        />
         <XAxis
           dataKey="time"
           tick={{ fontSize: 10 }}
@@ -88,7 +89,9 @@ export function LatencyChart({ data }: { data: LatencyDataPoint[] }) {
                 cx={cx}
                 cy={cy}
                 r={3}
-                fill={payload.ok ? "var(--color-latencyMs)" : "var(--destructive)"}
+                fill={
+                  payload.ok ? "var(--color-latencyMs)" : "var(--destructive)"
+                }
                 stroke="none"
               />
             );
