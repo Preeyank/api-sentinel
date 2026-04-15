@@ -76,7 +76,9 @@ export default async function MonitorDetailPage({
     .map((r) => r.latencyMs as number);
   const avgLatency =
     latencyValues.length > 0
-      ? Math.round(latencyValues.reduce((s, v) => s + v, 0) / latencyValues.length)
+      ? Math.round(
+          latencyValues.reduce((s, v) => s + v, 0) / latencyValues.length,
+        )
       : null;
 
   const latestCheck = checkResults[0] ?? null;
@@ -116,7 +118,10 @@ export default async function MonitorDetailPage({
           <MonitorStatusBadge status={status} />
           <Badge
             variant="outline"
-            className={cn("text-[10px]", ENV_BADGE_CLASSES[monitor.environment])}
+            className={cn(
+              "text-[10px]",
+              ENV_BADGE_CLASSES[monitor.environment],
+            )}
           >
             {ENV_LABELS[monitor.environment]}
           </Badge>
