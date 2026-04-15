@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Plus, Pencil, Trash2, Globe, Activity, Play } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { MonitorDialog } from "@/components/monitors/MonitorDialog";
+import { MonitorStatusBadge } from "@/components/monitors/MonitorStatusBadge";
 import { deleteMonitor, toggleMonitor } from "@/lib/actions/monitors";
 import {
   ENV_LABELS,
@@ -37,15 +39,15 @@ const ENV_BADGE_CLASSES = {
 } as const;
 import { cn, formatInterval, timeAgo } from "@/lib/utils";
 import type { CheckOutcome } from "@/types/checks";
-import type { Monitor } from "@/types/monitors";
+import type { Monitor, MonitorWithStats } from "@/types/monitors";
 
 type Props = {
-  monitors: Monitor[];
+  monitors: MonitorWithStats[];
 };
 
 export function MonitorList({ monitors }: Props) {
   const router = useRouter();
-  const [items, setItems] = useState(monitors);
+  const [items, setItems] = useState<MonitorWithStats[]>(monitors);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMonitor, setEditingMonitor] = useState<Monitor | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -172,9 +174,13 @@ export function MonitorList({ monitors }: Props) {
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-medium text-foreground">
+                  <Link
+                    href={`/dashboard/monitors/${monitor.id}`}
+                    className="truncate text-sm font-medium text-foreground hover:underline"
+                  >
                     {monitor.name}
-                  </p>
+                  </Link>
+                  <MonitorStatusBadge status={monitor.status} />
                   <Badge variant="outline" className={cn("shrink-0 text-[10px]", ENV_BADGE_CLASSES[monitor.environment])}>
                     {ENV_LABELS[monitor.environment]}
                   </Badge>
@@ -187,6 +193,12 @@ export function MonitorList({ monitors }: Props) {
                   <span>Status {monitor.expectedStatus}</span>
                   <span>·</span>
                   <span>Checked {timeAgo(monitor.lastCheckedAt)}</span>
+                  {monitor.uptime24h !== null && (
+                    <>
+                      <span>·</span>
+                      <span>{monitor.uptime24h.toFixed(1)}% uptime</span>
+                    </>
+                  )}
                 </div>
               </div>
 
