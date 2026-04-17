@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Plus, Pencil, Trash2, Globe, Activity, Play } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -21,20 +20,12 @@ import {
 import { MonitorDialog } from "@/components/monitors/MonitorDialog";
 import { MonitorStatusBadge } from "@/components/monitors/MonitorStatusBadge";
 import { deleteMonitor, toggleMonitor } from "@/lib/actions/monitors";
-import { ENV_LABELS, ERROR_LABELS } from "@/lib/constants/monitors";
-
-const ENV_ICON_COLORS = {
-  PROD: "bg-blue-500/10 text-blue-500",
-  STAGING: "bg-amber-500/10 text-amber-500",
-  DEV: "bg-violet-500/10 text-violet-500",
-} as const;
-
-const ENV_BADGE_CLASSES = {
-  PROD: "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  STAGING:
-    "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  DEV: "border-violet-500/30 bg-violet-500/10 text-violet-600 dark:text-violet-400",
-} as const;
+import {
+  ENV_LABELS,
+  ENV_ICON_COLORS,
+  ENV_BADGE_CLASSES,
+  ERROR_LABELS,
+} from "@/lib/constants/monitors";
 import { cn, formatInterval, timeAgo } from "@/lib/utils";
 import type { CheckOutcome } from "@/types/checks";
 import type { Monitor, MonitorWithStats } from "@/types/monitors";
@@ -157,7 +148,8 @@ export function MonitorList({ monitors }: Props) {
           {items.map((monitor) => (
             <div
               key={monitor.id}
-              className="flex items-center gap-4 border-l-2 border-l-transparent px-4 py-3.5 transition-colors hover:bg-muted hover:border-l-primary/60"
+              onClick={() => router.push(`/dashboard/monitors/${monitor.id}`)}
+              className="flex items-center gap-4 border-l-2 border-l-transparent px-4 py-3.5 transition-colors hover:bg-muted hover:border-l-primary/60 cursor-pointer"
             >
               <div
                 className={cn(
@@ -181,12 +173,9 @@ export function MonitorList({ monitors }: Props) {
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <Link
-                    href={`/dashboard/monitors/${monitor.id}`}
-                    className="truncate text-sm font-medium text-foreground hover:underline"
-                  >
+                  <span className="truncate text-sm font-medium text-foreground">
                     {monitor.name}
-                  </Link>
+                  </span>
                   <MonitorStatusBadge status={monitor.status} />
                   <Badge
                     variant="outline"
@@ -215,7 +204,10 @@ export function MonitorList({ monitors }: Props) {
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
+              <div
+                className="relative z-10 flex shrink-0 items-center gap-2"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <Switch
                   checked={monitor.isActive}
                   onCheckedChange={(checked) => {

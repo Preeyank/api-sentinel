@@ -40,7 +40,9 @@ export function OpenIncidentsList({ incidents }: Props) {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-medium text-destructive">
-                  {incident.type === "FAILURE" ? "Service failure" : "High latency"}
+                  {incident.type === "FAILURE"
+                    ? "Service failure"
+                    : "High latency"}
                 </span>
                 <Badge
                   variant="outline"
