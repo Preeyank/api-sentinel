@@ -6,7 +6,12 @@ import { PAGE_TITLES } from "@/lib/constants/nav";
 
 export function TopBar() {
   const pathname = usePathname();
-  const title = PAGE_TITLES[pathname] ?? "Dashboard";
+  const title =
+    PAGE_TITLES[pathname] ??
+    Object.entries(PAGE_TITLES).find(([key]) =>
+      pathname.startsWith(key + "/"),
+    )?.[1] ??
+    "Dashboard";
 
   return (
     <header className="relative flex h-14 shrink-0 items-center justify-between px-6">

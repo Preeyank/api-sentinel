@@ -18,34 +18,25 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { MonitorDialog } from "@/components/monitors/MonitorDialog";
+import { MonitorStatusBadge } from "@/components/monitors/MonitorStatusBadge";
 import { deleteMonitor, toggleMonitor } from "@/lib/actions/monitors";
 import {
   ENV_LABELS,
+  ENV_ICON_COLORS,
+  ENV_BADGE_CLASSES,
   ERROR_LABELS,
 } from "@/lib/constants/monitors";
-
-const ENV_ICON_COLORS = {
-  PROD: "bg-blue-500/10 text-blue-500",
-  STAGING: "bg-amber-500/10 text-amber-500",
-  DEV: "bg-violet-500/10 text-violet-500",
-} as const;
-
-const ENV_BADGE_CLASSES = {
-  PROD: "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  STAGING: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  DEV: "border-violet-500/30 bg-violet-500/10 text-violet-600 dark:text-violet-400",
-} as const;
 import { cn, formatInterval, timeAgo } from "@/lib/utils";
 import type { CheckOutcome } from "@/types/checks";
-import type { Monitor } from "@/types/monitors";
+import type { Monitor, MonitorWithStats } from "@/types/monitors";
 
 type Props = {
-  monitors: Monitor[];
+  monitors: MonitorWithStats[];
 };
 
 export function MonitorList({ monitors }: Props) {
   const router = useRouter();
-  const [items, setItems] = useState(monitors);
+  const [items, setItems] = useState<MonitorWithStats[]>(monitors);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMonitor, setEditingMonitor] = useState<Monitor | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -157,25 +148,42 @@ export function MonitorList({ monitors }: Props) {
           {items.map((monitor) => (
             <div
               key={monitor.id}
-              className="flex items-center gap-4 border-l-2 border-l-transparent px-4 py-3.5 transition-colors hover:bg-muted hover:border-l-primary/60"
+              onClick={() => router.push(`/dashboard/monitors/${monitor.id}`)}
+              className="flex items-center gap-4 border-l-2 border-l-transparent px-4 py-3.5 transition-colors hover:bg-muted hover:border-l-primary/60 cursor-pointer"
             >
-              <div className={cn("relative flex size-9 shrink-0 items-center justify-center rounded-lg", ENV_ICON_COLORS[monitor.environment])}>
+              <div
+                className={cn(
+                  "relative flex size-9 shrink-0 items-center justify-center rounded-lg",
+                  ENV_ICON_COLORS[monitor.environment],
+                )}
+              >
                 <Globe className="size-4" />
                 {monitor.isActive && (
                   <span className="absolute -right-0.5 -top-0.5 size-2.5 animate-ping rounded-full bg-emerald-500 opacity-60" />
                 )}
-                <span className={cn(
-                  "absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-card",
-                  monitor.isActive ? "bg-emerald-500" : "bg-muted-foreground/40",
-                )} />
+                <span
+                  className={cn(
+                    "absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-card",
+                    monitor.isActive
+                      ? "bg-emerald-500"
+                      : "bg-muted-foreground/40",
+                  )}
+                />
               </div>
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-medium text-foreground">
+                  <span className="truncate text-sm font-medium text-foreground">
                     {monitor.name}
-                  </p>
-                  <Badge variant="outline" className={cn("shrink-0 text-[10px]", ENV_BADGE_CLASSES[monitor.environment])}>
+                  </span>
+                  <MonitorStatusBadge status={monitor.status} />
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "shrink-0 text-[10px]",
+                      ENV_BADGE_CLASSES[monitor.environment],
+                    )}
+                  >
                     {ENV_LABELS[monitor.environment]}
                   </Badge>
                 </div>
@@ -187,10 +195,19 @@ export function MonitorList({ monitors }: Props) {
                   <span>Status {monitor.expectedStatus}</span>
                   <span>·</span>
                   <span>Checked {timeAgo(monitor.lastCheckedAt)}</span>
+                  {monitor.uptime24h !== null && (
+                    <>
+                      <span>·</span>
+                      <span>{monitor.uptime24h.toFixed(1)}% uptime</span>
+                    </>
+                  )}
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
+              <div
+                className="relative z-10 flex shrink-0 items-center gap-2"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <Switch
                   checked={monitor.isActive}
                   onCheckedChange={(checked) => {

@@ -39,3 +39,25 @@ export const CRON_CONCURRENCY = 5;
 
 // Default latency threshold applied when a user first enables latency alerting.
 export const DEFAULT_LATENCY_THRESHOLD_MS = 2_000;
+
+export type MonitorStatus = "UP" | "DOWN" | "PAUSED" | "UNKNOWN";
+
+export const STATUS_LABELS: Record<MonitorStatus, string> = {
+  UP: "Up",
+  DOWN: "Down",
+  PAUSED: "Paused",
+  UNKNOWN: "Unknown",
+};
+
+// Presentational — used wherever a monitor's environment is shown as an icon or badge
+export const ENV_ICON_COLORS: Record<Environment, string> = {
+  PROD: "bg-blue-500/10 text-blue-500",
+  STAGING: "bg-amber-500/10 text-amber-500",
+  DEV: "bg-violet-500/10 text-violet-500",
+};
+
+export const ENV_BADGE_CLASSES: Record<Environment, string> = {
+  PROD: "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  STAGING: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  DEV: "border-violet-500/30 bg-violet-500/10 text-violet-600 dark:text-violet-400",
+};

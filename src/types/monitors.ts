@@ -1,5 +1,5 @@
 import type { MonitorFormValues } from "@/lib/validations/monitor";
-import type { Environment } from "@/lib/constants/monitors";
+import type { Environment, MonitorStatus } from "@/lib/constants/monitors";
 
 export type Monitor = {
   id: string;
@@ -16,4 +16,11 @@ export type Monitor = {
   lastCheckedAt: Date | null;
 };
 
+export type MonitorWithStats = Monitor & {
+  status: MonitorStatus;
+  uptime24h: number | null;
+};
+
 export type MonitorForDialog = { id: string } & MonitorFormValues;
+
+export type { MonitorStatus };
