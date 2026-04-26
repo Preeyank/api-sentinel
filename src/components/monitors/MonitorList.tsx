@@ -2,7 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, Globe, Activity, Play } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Activity,
+  Play,
+  Search,
+  Pause,
+  RotateCcw,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +31,6 @@ import { MonitorStatusBadge } from "@/components/monitors/MonitorStatusBadge";
 import { deleteMonitor, toggleMonitor } from "@/lib/actions/monitors";
 import {
   ENV_LABELS,
-  ENV_ICON_COLORS,
   ENV_BADGE_CLASSES,
   ERROR_LABELS,
 } from "@/lib/constants/monitors";
@@ -34,9 +42,50 @@ type Props = {
   monitors: MonitorWithStats[];
 };
 
+function StatusDot({ status }: { status: MonitorWithStats["status"] }) {
+  if (status === "UP") {
+    return (
+      <span className="relative flex size-2.5 shrink-0">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
+        <span className="relative inline-flex size-2.5 rounded-full bg-success" />
+      </span>
+    );
+  }
+  if (status === "DOWN") {
+    return <span className="size-2.5 shrink-0 rounded-full bg-destructive" />;
+  }
+  return (
+    <span className="size-2.5 shrink-0 rounded-full bg-muted-foreground/40" />
+  );
+}
+
+function UptimeMiniBar({
+  segments,
+}: {
+  segments: Array<"up" | "down" | "none">;
+}) {
+  return (
+    <div className="flex gap-px">
+      {segments.map((seg, i) => (
+        <div
+          key={i}
+          title={seg === "none" ? "No data" : seg === "up" ? "Up" : "Down"}
+          className={cn(
+            "h-4 w-1 rounded-[1px]",
+            seg === "up" && "bg-success/70",
+            seg === "down" && "bg-destructive/70",
+            seg === "none" && "bg-muted/50",
+          )}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function MonitorList({ monitors }: Props) {
   const router = useRouter();
   const [items, setItems] = useState<MonitorWithStats[]>(monitors);
+  const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMonitor, setEditingMonitor] = useState<Monitor | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -44,10 +93,17 @@ export function MonitorList({ monitors }: Props) {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [pauseConfirmId, setPauseConfirmId] = useState<string | null>(null);
 
-  // Sync local state when server re-renders with fresh data
   useEffect(() => {
     setItems(monitors);
   }, [monitors]);
+
+  const filtered = search.trim()
+    ? items.filter(
+        (m) =>
+          m.name.toLowerCase().includes(search.toLowerCase()) ||
+          m.url.toLowerCase().includes(search.toLowerCase()),
+      )
+    : items;
 
   const monitorToPause = items.find((m) => m.id === pauseConfirmId) ?? null;
   const monitorToDelete = items.find((m) => m.id === deleteConfirmId) ?? null;
@@ -65,13 +121,11 @@ export function MonitorList({ monitors }: Props) {
   async function handleToggle(id: string, isActive: boolean) {
     setItems((prev) => prev.map((m) => (m.id === id ? { ...m, isActive } : m)));
     setPauseConfirmId(null);
-
     const result = await toggleMonitor(id, isActive);
     if (result.success) {
       toast.success(isActive ? "Monitor activated" : "Monitor paused");
       router.refresh();
     } else {
-      // Revert optimistic update
       setItems((prev) =>
         prev.map((m) => (m.id === id ? { ...m, isActive: !isActive } : m)),
       );
@@ -84,7 +138,6 @@ export function MonitorList({ monitors }: Props) {
     try {
       const res = await fetch(`/api/monitors/${id}/check`, { method: "POST" });
       const outcome: CheckOutcome = await res.json();
-
       if (outcome.ok) {
         toast.success(`${outcome.statusCode} OK — ${outcome.latencyMs}ms`);
       } else {
@@ -117,63 +170,84 @@ export function MonitorList({ monitors }: Props) {
 
   return (
     <>
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            Monitors
+          </h1>
+          {items.length > 0 && (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+              {items.length}
+            </span>
+          )}
+        </div>
+        <Button onClick={openCreate} size="sm">
+          <Plus className="size-3.5" />
+          Add monitor
+        </Button>
+      </div>
+
+      {/* Search — only shown when there are monitors */}
       {items.length > 0 && (
-        <div className="flex items-center justify-end">
-          <Button onClick={openCreate} size="sm">
-            <Plus className="size-3.5" />
-            Add monitor
-          </Button>
+        <div className="mb-4 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search by name or URL…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-lg border border-border bg-card py-2 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60 transition-colors"
+          />
         </div>
       )}
 
+      {/* Empty state */}
       {items.length === 0 ? (
-        <div className="mt-8 flex flex-col items-center justify-center rounded-xl border border-dashed py-16">
-          <div className="flex size-12 items-center justify-center rounded-xl bg-muted">
-            <Activity className="size-6 text-muted-foreground/50" />
+        <div className="mt-8 flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
+          <div className="flex size-14 items-center justify-center rounded-2xl bg-muted">
+            <Activity className="size-7 text-muted-foreground/50" />
           </div>
-          <p className="mt-3 text-sm font-medium text-foreground">
+          <p className="mt-4 text-base font-semibold text-foreground">
             No monitors yet
           </p>
-          <p className="mt-1 max-w-xs text-center text-xs text-muted-foreground">
+          <p className="mt-1.5 max-w-xs text-center text-sm text-muted-foreground">
             Add your first monitor to start tracking endpoint uptime and
             response time.
           </p>
-          <Button onClick={openCreate} size="sm" className="mt-5">
+          <Button onClick={openCreate} size="sm" className="mt-6">
             <Plus className="size-3.5" />
             Add monitor
           </Button>
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="mt-8 flex flex-col items-center justify-center py-10 text-center">
+          <Search className="size-8 text-muted-foreground/40 mb-3" />
+          <p className="text-sm font-medium text-foreground">
+            No monitors match &ldquo;{search}&rdquo;
+          </p>
+          <button
+            onClick={() => setSearch("")}
+            className="mt-2 text-xs text-primary hover:underline"
+          >
+            Clear search
+          </button>
+        </div>
       ) : (
-        <div className="mt-4 divide-y overflow-hidden rounded-xl border bg-card">
-          {items.map((monitor) => (
+        <div className="flex flex-col gap-2.5">
+          {filtered.map((monitor) => (
             <div
               key={monitor.id}
-              onClick={() => router.push(`/dashboard/monitors/${monitor.id}`)}
-              className="flex items-center gap-4 border-l-2 border-l-transparent px-4 py-3.5 transition-colors hover:bg-muted hover:border-l-primary/60 cursor-pointer"
+              onClick={() => router.push(`/dashboard/monitors/${monitor.slug}`)}
+              className="group relative flex cursor-pointer items-center gap-4 rounded-xl border border-border bg-card px-5 py-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md hover:border-primary/30"
             >
-              <div
-                className={cn(
-                  "relative flex size-9 shrink-0 items-center justify-center rounded-lg",
-                  ENV_ICON_COLORS[monitor.environment],
-                )}
-              >
-                <Globe className="size-4" />
-                {monitor.isActive && (
-                  <span className="absolute -right-0.5 -top-0.5 size-2.5 animate-ping rounded-full bg-emerald-500 opacity-60" />
-                )}
-                <span
-                  className={cn(
-                    "absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-card",
-                    monitor.isActive
-                      ? "bg-emerald-500"
-                      : "bg-muted-foreground/40",
-                  )}
-                />
-              </div>
+              {/* Status dot */}
+              <StatusDot status={monitor.status} />
 
+              {/* Main info */}
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="truncate text-sm font-medium text-foreground">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
                     {monitor.name}
                   </span>
                   <MonitorStatusBadge status={monitor.status} />
@@ -187,46 +261,54 @@ export function MonitorList({ monitors }: Props) {
                     {ENV_LABELS[monitor.environment]}
                   </Badge>
                 </div>
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                  <span className="truncate max-w-[260px]">{monitor.url}</span>
-                  <span>·</span>
-                  <span>Every {formatInterval(monitor.intervalSec)}</span>
-                  <span>·</span>
-                  <span>Status {monitor.expectedStatus}</span>
-                  <span>·</span>
-                  <span>Checked {timeAgo(monitor.lastCheckedAt)}</span>
-                  {monitor.uptime24h !== null && (
-                    <>
-                      <span>·</span>
-                      <span>{monitor.uptime24h.toFixed(1)}% uptime</span>
-                    </>
+                <p className="mt-0.5 max-w-[360px] truncate text-xs text-muted-foreground">
+                  {monitor.url}
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+                  {monitor.uptimeSegments && (
+                    <UptimeMiniBar segments={monitor.uptimeSegments} />
                   )}
+                  <span className="text-xs text-muted-foreground">
+                    {monitor.uptime24h !== null
+                      ? `${monitor.uptime24h.toFixed(1)}% uptime`
+                      : "No data"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">·</span>
+                  <span className="text-xs text-muted-foreground">
+                    Every {formatInterval(monitor.intervalSec)}
+                  </span>
+                  <span className="text-xs text-muted-foreground">·</span>
+                  <span className="text-xs text-muted-foreground">
+                    Checked {timeAgo(monitor.lastCheckedAt)}
+                  </span>
                 </div>
               </div>
 
+              {/* Actions — always visible on mobile, opacity-0 on desktop until hover */}
               <div
-                className="relative z-10 flex shrink-0 items-center gap-2"
+                className="relative z-10 flex shrink-0 items-center gap-1 transition-opacity md:opacity-0 md:group-hover:opacity-100"
                 onClick={(e) => e.stopPropagation()}
               >
                 <Switch
                   checked={monitor.isActive}
                   onCheckedChange={(checked) => {
-                    if (!checked) {
-                      setPauseConfirmId(monitor.id);
-                    } else {
-                      handleToggle(monitor.id, true);
-                    }
+                    if (!checked) setPauseConfirmId(monitor.id);
+                    else handleToggle(monitor.id, true);
                   }}
                 />
 
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  title="Run now"
+                  title="Run check now"
                   disabled={runningId === monitor.id}
                   onClick={() => handleRunCheck(monitor.id)}
                 >
-                  <Play className="size-3.5" />
+                  {runningId === monitor.id ? (
+                    <RotateCcw className="size-3.5 animate-spin" />
+                  ) : (
+                    <Play className="size-3.5" />
+                  )}
                 </Button>
 
                 <Button
@@ -254,7 +336,7 @@ export function MonitorList({ monitors }: Props) {
         </div>
       )}
 
-      {/* Single pause dialog — hoisted outside the list */}
+      {/* Pause confirm dialog */}
       <AlertDialog
         open={!!pauseConfirmId}
         onOpenChange={(open) => !open && setPauseConfirmId(null)}
@@ -264,7 +346,7 @@ export function MonitorList({ monitors }: Props) {
             <AlertDialogTitle>Pause monitor?</AlertDialogTitle>
             <AlertDialogDescription>
               &ldquo;{monitorToPause?.name}&rdquo; will stop sending checks
-              until it is re-activated.
+              until re-activated.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -274,13 +356,14 @@ export function MonitorList({ monitors }: Props) {
                 pauseConfirmId && handleToggle(pauseConfirmId, false)
               }
             >
+              <Pause className="size-3.5" />
               Pause monitor
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Single delete dialog — hoisted outside the list */}
+      {/* Delete confirm dialog */}
       <AlertDialog
         open={!!deleteConfirmId}
         onOpenChange={(open) => !open && setDeleteConfirmId(null)}

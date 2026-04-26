@@ -19,6 +19,7 @@ export type Monitor = {
 export type MonitorWithStats = Monitor & {
   status: MonitorStatus;
   uptime24h: number | null;
+  uptimeSegments?: Array<"up" | "down" | "none">;
 };
 
 export type MonitorForDialog = { id: string } & MonitorFormValues;

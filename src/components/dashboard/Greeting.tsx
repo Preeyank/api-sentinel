@@ -14,8 +14,7 @@ export function Greeting({ firstName }: { firstName: string | null }) {
     <h1 className="text-2xl font-bold tracking-tight text-foreground">
       {firstName ? (
         <>
-          {timeOfDay},{" "}
-          <span className="text-primary">{firstName}</span>
+          {timeOfDay}, <span className="text-primary">{firstName}</span>
         </>
       ) : (
         timeOfDay
