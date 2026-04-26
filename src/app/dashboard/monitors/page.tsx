@@ -65,7 +65,10 @@ export default async function MonitorsPage() {
       const segStart = new Date(now.getTime() - (24 - i) * 60 * 60 * 1_000);
       const segEnd = new Date(segStart.getTime() + 60 * 60 * 1_000);
       const hourChecks = recentChecks.filter(
-        (c) => c.monitorId === monitorId && c.checkedAt >= segStart && c.checkedAt < segEnd,
+        (c) =>
+          c.monitorId === monitorId &&
+          c.checkedAt >= segStart &&
+          c.checkedAt < segEnd,
       );
       if (hourChecks.length === 0) return "none";
       return hourChecks.some((c) => c.errorType !== null) ? "down" : "up";
@@ -96,4 +99,3 @@ export default async function MonitorsPage() {
     </div>
   );
 }
-
