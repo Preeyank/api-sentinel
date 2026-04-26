@@ -217,7 +217,9 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
               <Label htmlFor="monitor-expectedStatus">Expected status</Label>
               <Input
                 id="monitor-expectedStatus"
-                type="number"                className="h-11 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60"                {...register("expectedStatus", { valueAsNumber: true })}
+                type="number"
+                className="h-11 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60"
+                {...register("expectedStatus", { valueAsNumber: true })}
               />
               {errors.expectedStatus && (
                 <p className="text-xs text-destructive">
@@ -230,7 +232,9 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
               <Label htmlFor="monitor-timeoutMs">Timeout (ms)</Label>
               <Input
                 id="monitor-timeoutMs"
-                type="number"                className="h-11 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60"                {...register("timeoutMs", { valueAsNumber: true })}
+                type="number"
+                className="h-11 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60"
+                {...register("timeoutMs", { valueAsNumber: true })}
               />
               {errors.timeoutMs && (
                 <p className="text-xs text-destructive">
@@ -252,7 +256,10 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
               <Switch
                 checked={latencyThresholdMs !== null}
                 onCheckedChange={(checked) =>
-                  setValue("latencyThresholdMs", checked ? DEFAULT_LATENCY_THRESHOLD_MS : null)
+                  setValue(
+                    "latencyThresholdMs",
+                    checked ? DEFAULT_LATENCY_THRESHOLD_MS : null,
+                  )
                 }
               />
             </div>
