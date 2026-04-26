@@ -17,11 +17,11 @@ export default async function MonitorDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const { id: slug } = await params;
   const session = await getRequiredSession();
 
   const monitor = await prisma.monitor.findFirst({
-    where: { id, userId: session.user.id },
+    where: { slug, userId: session.user.id },
   });
   if (!monitor) notFound();
 
@@ -58,7 +58,9 @@ export default async function MonitorDetailPage({
     .map((r) => r.latencyMs as number);
   const avgLatency =
     latencyValues.length > 0
-      ? Math.round(latencyValues.reduce((s, v) => s + v, 0) / latencyValues.length)
+      ? Math.round(
+          latencyValues.reduce((s, v) => s + v, 0) / latencyValues.length,
+        )
       : null;
 
   const latestCheck = checkResults[0] ?? null;
@@ -79,7 +81,7 @@ export default async function MonitorDetailPage({
   }));
 
   return (
-    <div className="flex h-full flex-col p-6 lg:p-8">
+    <div className="flex h-full flex-col p-6 lg:p-8 animate-fade-in">
       <MonitorBreadcrumb monitorName={monitor.name} />
 
       <MonitorDetailHeader
@@ -107,8 +109,11 @@ export default async function MonitorDetailPage({
         <h2 className="mb-2 text-sm font-medium text-foreground">
           Latency — last {checkResults.length} checks
         </h2>
-        <div className="rounded-xl border bg-card p-4">
-          <LatencyChart data={chartData} />
+        <div className="rounded-xl border border-border bg-card/80 p-4 backdrop-blur-sm">
+          <LatencyChart
+            data={chartData}
+            latencyThresholdMs={monitor.latencyThresholdMs}
+          />
         </div>
       </section>
 

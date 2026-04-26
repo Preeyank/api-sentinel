@@ -1,6 +1,13 @@
 "use client";
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ReferenceLine,
+} from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
@@ -21,10 +28,16 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function LatencyChart({ data }: { data: LatencyDataPoint[] }) {
+export function LatencyChart({
+  data,
+  latencyThresholdMs,
+}: {
+  data: LatencyDataPoint[];
+  latencyThresholdMs?: number | null;
+}) {
   if (data.length === 0) {
     return (
-      <div className="flex h-[180px] items-center justify-center text-xs text-muted-foreground">
+      <div className="flex h-[200px] items-center justify-center text-xs text-muted-foreground">
         No check data yet
       </div>
     );
@@ -34,11 +47,25 @@ export function LatencyChart({ data }: { data: LatencyDataPoint[] }) {
   const ordered = [...data].reverse();
 
   return (
-    <ChartContainer config={chartConfig} className="h-[180px] w-full">
-      <LineChart
+    <ChartContainer config={chartConfig} className="h-[200px] w-full">
+      <AreaChart
         data={ordered}
-        margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
+        margin={{ top: 8, right: 4, left: -20, bottom: 0 }}
       >
+        <defs>
+          <linearGradient id="latencyGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop
+              offset="5%"
+              stopColor="var(--color-latencyMs)"
+              stopOpacity={0.25}
+            />
+            <stop
+              offset="95%"
+              stopColor="var(--color-latencyMs)"
+              stopOpacity={0.02}
+            />
+          </linearGradient>
+        </defs>
         <CartesianGrid
           strokeDasharray="3 3"
           vertical={false}
@@ -60,6 +87,7 @@ export function LatencyChart({ data }: { data: LatencyDataPoint[] }) {
         <ChartTooltip
           content={
             <ChartTooltipContent
+              className="bg-card/80 backdrop-blur-md border-border/40 shadow-xl"
               labelFormatter={(label) => label}
               formatter={(value, _name, item) => {
                 const row = item.payload as LatencyDataPoint;
@@ -72,10 +100,27 @@ export function LatencyChart({ data }: { data: LatencyDataPoint[] }) {
             />
           }
         />
-        <Line
+        {latencyThresholdMs != null && (
+          <ReferenceLine
+            y={latencyThresholdMs}
+            stroke="var(--destructive)"
+            strokeDasharray="4 3"
+            strokeOpacity={0.55}
+            label={{
+              value: `${latencyThresholdMs}ms limit`,
+              position: "insideTopRight",
+              fontSize: 9,
+              fill: "var(--destructive)",
+              opacity: 0.65,
+            }}
+          />
+        )}
+        <Area
           type="monotone"
           dataKey="latencyMs"
+          stroke="var(--color-latencyMs)"
           strokeWidth={1.5}
+          fill="url(#latencyGradient)"
           dot={(props) => {
             const { cx, cy, payload } = props as {
               cx: number;
@@ -97,10 +142,9 @@ export function LatencyChart({ data }: { data: LatencyDataPoint[] }) {
             );
           }}
           activeDot={{ r: 4 }}
-          stroke="var(--color-latencyMs)"
           connectNulls={false}
         />
-      </LineChart>
+      </AreaChart>
     </ChartContainer>
   );
 }
