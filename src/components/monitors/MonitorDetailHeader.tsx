@@ -20,7 +20,7 @@ function StatusDot({ status }: { status: MonitorStatus }) {
     return (
       <span className="relative flex size-3 shrink-0">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
-        <span className="relative inline-flex size-3 rounded-full bg-success" />
+        <span className="relative inline-flex size-3 rounded-full bg-success animate-pulse-glow" />
       </span>
     );
   }

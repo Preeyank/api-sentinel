@@ -94,7 +94,7 @@ export default async function MonitorsPage() {
   });
 
   return (
-    <div className="max-w-5xl p-6 lg:p-8">
+    <div className="max-w-5xl p-6 lg:p-8 animate-fade-in">
       <MonitorList monitors={monitorsWithStats} />
     </div>
   );

@@ -21,7 +21,13 @@ export function Sidebar({ user, plan }: SidebarProps) {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [logoLoading, setLogoLoading] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Reset logo loading state on any navigation (not just /about)
+  useEffect(() => {
+    setLogoLoading(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -71,9 +77,20 @@ export function Sidebar({ user, plan }: SidebarProps) {
             collapsed ? "w-0 overflow-hidden opacity-0" : "opacity-100",
           )}
         >
-          <Link href="/about" title="Back to home">
+          <button
+            onClick={() => {
+              setLogoLoading(true);
+              router.push("/about");
+            }}
+            title="Back to home"
+            className={cn(
+              "cursor-pointer transition-opacity",
+              logoLoading &&
+                "cursor-wait opacity-60 animate-pulse pointer-events-none",
+            )}
+          >
             <Logo variant="full" size="sm" />
-          </Link>
+          </button>
         </div>
         <button
           onClick={toggle}
@@ -129,7 +146,7 @@ export function Sidebar({ user, plan }: SidebarProps) {
             <div className="border-t p-1.5">
               <button
                 onClick={handleSignOut}
-                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
+                className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
               >
                 <LogOut className="size-3.5" />
                 Sign out

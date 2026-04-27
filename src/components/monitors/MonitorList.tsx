@@ -47,7 +47,7 @@ function StatusDot({ status }: { status: MonitorWithStats["status"] }) {
     return (
       <span className="relative flex size-2.5 shrink-0">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
-        <span className="relative inline-flex size-2.5 rounded-full bg-success" />
+        <span className="relative inline-flex size-2.5 rounded-full bg-success animate-pulse-glow" />
       </span>
     );
   }
@@ -59,25 +59,40 @@ function StatusDot({ status }: { status: MonitorWithStats["status"] }) {
   );
 }
 
-function UptimeMiniBar({
+function UptimeHistory({
   segments,
 }: {
   segments: Array<"up" | "down" | "none">;
 }) {
   return (
-    <div className="flex gap-px">
-      {segments.map((seg, i) => (
-        <div
-          key={i}
-          title={seg === "none" ? "No data" : seg === "up" ? "Up" : "Down"}
-          className={cn(
-            "h-4 w-1 rounded-[1px]",
-            seg === "up" && "bg-success/70",
-            seg === "down" && "bg-destructive/70",
-            seg === "none" && "bg-muted/50",
-          )}
-        />
-      ))}
+    <div className="flex items-center gap-1.5">
+      <span className="text-[10px] font-medium text-muted-foreground/50 tabular-nums">
+        24h
+      </span>
+      <div className="flex items-center gap-0.5">
+        {segments.map((seg, i) => {
+          const hoursAgo = 24 - i;
+          const timeLabel = hoursAgo === 1 ? "1h ago" : `${hoursAgo}h ago`;
+          const statusLabel =
+            seg === "none"
+              ? "No data"
+              : seg === "up"
+                ? "All checks passed"
+                : "At least one check failed";
+          return (
+            <span
+              key={i}
+              title={`${timeLabel}: ${statusLabel}`}
+              className={cn(
+                "inline-block size-2 rounded-full",
+                seg === "up" && "bg-success/80",
+                seg === "down" && "bg-destructive/80",
+                seg === "none" && "bg-muted-foreground/20",
+              )}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -266,7 +281,7 @@ export function MonitorList({ monitors }: Props) {
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
                   {monitor.uptimeSegments && (
-                    <UptimeMiniBar segments={monitor.uptimeSegments} />
+                    <UptimeHistory segments={monitor.uptimeSegments} />
                   )}
                   <span className="text-xs text-muted-foreground">
                     {monitor.uptime24h !== null

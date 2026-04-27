@@ -27,7 +27,7 @@ export default async function ProfilePage() {
   const initials = getInitials(session.user.name);
 
   return (
-    <div className="max-w-2xl p-6 lg:p-8">
+    <div className="max-w-2xl p-6 lg:p-8 animate-fade-in">
       <div className="mb-6">
         <h1 className="text-xl font-bold tracking-tight text-foreground">
           Profile
@@ -39,14 +39,17 @@ export default async function ProfilePage() {
 
       <div className="overflow-hidden rounded-xl border bg-card">
         {/* Avatar header */}
-        <div className="flex items-center gap-4 border-b bg-muted/30 px-5 py-5">
-          <Avatar className="size-14 ring-2 ring-primary/20">
-            <AvatarFallback className="bg-primary/10 text-base font-bold text-primary">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+        <div className="flex items-center gap-5 border-b bg-muted/30 px-5 py-6">
+          {/* Gradient ring wrapper */}
+          <div className="shrink-0 rounded-full bg-gradient-to-br from-primary via-[oklch(0.60_0.20_200)] to-[oklch(0.65_0.18_145)] p-[2.5px]">
+            <Avatar className="size-14 ring-2 ring-card">
+              <AvatarFallback className="bg-card text-base font-bold text-foreground">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+          </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate font-semibold text-foreground">
+            <p className="truncate text-base font-semibold text-foreground">
               {session.user.name}
             </p>
             <p className="truncate text-sm text-muted-foreground">
@@ -55,7 +58,7 @@ export default async function ProfilePage() {
           </div>
           <Badge
             variant="secondary"
-            className="uppercase tracking-wider text-[10px] font-semibold"
+            className="shrink-0 border border-primary/20 bg-primary/10 text-primary uppercase tracking-wider text-[10px] font-semibold"
           >
             {planLabel}
           </Badge>
