@@ -71,7 +71,9 @@ export function Sidebar({ user, plan }: SidebarProps) {
             collapsed ? "w-0 overflow-hidden opacity-0" : "opacity-100",
           )}
         >
-          <Logo variant="full" size="sm" />
+          <Link href="/about" title="Back to home">
+            <Logo variant="full" size="sm" />
+          </Link>
         </div>
         <button
           onClick={toggle}
