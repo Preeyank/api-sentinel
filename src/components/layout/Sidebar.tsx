@@ -53,12 +53,15 @@ export function Sidebar({ user, plan }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "relative hidden h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar/90 backdrop-blur-xl md:flex overflow-visible transition-[width] duration-200 ease-in-out",
+        "relative z-10 hidden h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar/90 backdrop-blur-xl md:flex overflow-visible transition-[width] duration-200 ease-in-out",
         collapsed ? "w-14" : "w-60",
       )}
     >
       {/* Decorative top glow — visible in both modes, more prominent in dark */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-primary/[0.06] to-transparent" aria-hidden="true" />
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-primary/[0.06] to-transparent"
+        aria-hidden="true"
+      />
 
       {/* Header: logo/title (hides when collapsed) + always-visible toggle */}
       <div className="flex h-10 shrink-0 items-center px-2 mt-1.5">

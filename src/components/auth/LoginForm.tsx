@@ -78,6 +78,7 @@ export function LoginForm() {
                   type="email"
                   placeholder="you@example.com"
                   autoComplete="email"
+                  className="h-11 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60"
                   {...field}
                 />
                 <FieldError
@@ -98,6 +99,7 @@ export function LoginForm() {
                   type="password"
                   placeholder="Your password"
                   autoComplete="current-password"
+                  className="h-11 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60"
                   {...field}
                 />
                 <FieldError
