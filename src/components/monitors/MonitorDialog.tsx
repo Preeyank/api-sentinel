@@ -112,7 +112,7 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg border border-border/60 bg-card/80 backdrop-blur-xl shadow-2xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit monitor" : "Add monitor"}</DialogTitle>
           <DialogDescription>
@@ -129,6 +129,7 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
             <Input
               id="monitor-name"
               placeholder="My API"
+              className="h-11 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60"
               {...register("name")}
             />
             {errors.name && (
@@ -142,6 +143,7 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
             <Input
               id="monitor-url"
               placeholder="https://api.example.com/health"
+              className="h-11 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60"
               {...register("url")}
             />
             {errors.url && (
@@ -216,6 +218,7 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
               <Input
                 id="monitor-expectedStatus"
                 type="number"
+                className="h-11 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60"
                 {...register("expectedStatus", { valueAsNumber: true })}
               />
               {errors.expectedStatus && (
@@ -230,6 +233,7 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
               <Input
                 id="monitor-timeoutMs"
                 type="number"
+                className="h-11 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60"
                 {...register("timeoutMs", { valueAsNumber: true })}
               />
               {errors.timeoutMs && (
@@ -241,7 +245,7 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
           </div>
 
           {/* Latency alerting */}
-          <div className="space-y-3 rounded-lg border p-3">
+          <div className="space-y-3 rounded-lg border border-border/60 bg-muted/30 p-3">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label>Latency alerting</Label>
@@ -252,7 +256,10 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
               <Switch
                 checked={latencyThresholdMs !== null}
                 onCheckedChange={(checked) =>
-                  setValue("latencyThresholdMs", checked ? DEFAULT_LATENCY_THRESHOLD_MS : null)
+                  setValue(
+                    "latencyThresholdMs",
+                    checked ? DEFAULT_LATENCY_THRESHOLD_MS : null,
+                  )
                 }
               />
             </div>
@@ -264,6 +271,7 @@ export function MonitorDialog({ open, onOpenChange, monitor }: Props) {
                 <Input
                   id="monitor-latencyThresholdMs"
                   type="number"
+                  className="h-11 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60"
                   {...register("latencyThresholdMs", { valueAsNumber: true })}
                 />
                 {errors.latencyThresholdMs && (

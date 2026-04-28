@@ -1,11 +1,6 @@
-import {
-  ShieldCheck,
-  Activity,
-  Bell,
-  BarChart3,
-  Zap,
-} from "lucide-react";
+import { Activity, BarChart3, Bell, Zap } from "lucide-react";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
+import { Logo } from "@/components/shared/Logo";
 
 const FEATURES = [
   {
@@ -25,37 +20,87 @@ const FEATURES = [
   },
 ];
 
+// Decorative floating status pills shown on the branding panel
+const STATUS_PILLS = [
+  {
+    label: "api.stripe.com",
+    status: "UP",
+    latency: "42ms",
+    top: "22%",
+    left: "58%",
+  },
+  {
+    label: "api.github.com",
+    status: "UP",
+    latency: "89ms",
+    top: "42%",
+    left: "62%",
+  },
+  {
+    label: "payments.acme.io",
+    status: "DOWN",
+    latency: "—",
+    top: "62%",
+    left: "55%",
+  },
+  {
+    label: "auth.example.com",
+    status: "UP",
+    latency: "31ms",
+    top: "75%",
+    left: "60%",
+  },
+];
+
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="h-screen overflow-hidden flex bg-background">
       {/* ── Branding panel ── */}
       <div className="hidden lg:flex lg:w-[52%] xl:w-[55%] flex-col justify-between p-12 relative overflow-hidden select-none">
-        {/* Base */}
+        {/* Base + animated gradient mesh */}
         <div className="absolute inset-0 bg-[oklch(0.12_0.04_264)]" />
-        {/* Gradient mesh */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[oklch(0.3_0.17_264)] via-[oklch(0.17_0.07_264)] to-[oklch(0.1_0.03_264)]" />
+        <div className="absolute inset-0 bg-gradient-mesh opacity-80" />
+        {/* Static depth layers */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_-5%_-5%,oklch(0.55_0.22_270/0.35),transparent)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_65%_55%_at_105%_105%,oklch(0.45_0.18_230/0.3),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_35%_35%_at_65%_25%,oklch(0.6_0.24_264/0.12),transparent)]" />
         {/* Dot grid */}
         <div className="absolute inset-0 bg-[radial-gradient(circle,oklch(1_0_0/0.065)_1px,transparent_1px)] bg-[size:28px_28px]" />
         {/* Vignette */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_110%_110%_at_50%_50%,transparent_55%,oklch(0_0_0/0.45))]" />
 
-        {/* Header */}
-        <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20 backdrop-blur-sm shadow-[0_0_24px_oklch(0.6_0.25_264/0.45)]">
-              <ShieldCheck className="size-5 text-white" />
-            </div>
-            <span className="text-lg font-semibold tracking-tight text-white">
-              API Sentinel
+        {/* Decorative floating status pills */}
+        {STATUS_PILLS.map((pill) => (
+          <div
+            key={pill.label}
+            className="pointer-events-none absolute flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 backdrop-blur-sm"
+            style={{ top: pill.top, left: pill.left }}
+          >
+            <span
+              className={`size-1.5 rounded-full ${pill.status === "UP" ? "bg-emerald-400" : "bg-red-400"}`}
+            />
+            <span className="text-[11px] font-medium text-white/70">
+              {pill.label}
+            </span>
+            <span
+              className={`text-[10px] font-mono ${pill.status === "UP" ? "text-emerald-400/80" : "text-red-400/80"}`}
+            >
+              {pill.latency}
             </span>
           </div>
+        ))}
+
+        {/* Header */}
+        <div className="relative z-10 flex items-center justify-between">
+          <Logo
+            variant="full"
+            size="md"
+            animated
+            className="text-white [&_span]:text-white"
+          />
           {/* Live badge */}
           <div className="flex items-center gap-2 rounded-full bg-white/8 px-3 py-1.5 ring-1 ring-white/12 backdrop-blur-sm">
             <span className="relative flex size-2">
@@ -110,7 +155,7 @@ export default function AuthLayout({
         </div>
 
         {/* Footer */}
-        <div className="relative z-10 flex items-center justify-between">
+        <div className="relative z-10">
           <p className="text-xs text-white/22">
             © {new Date().getFullYear()} API Sentinel. All rights reserved.
           </p>
@@ -119,25 +164,19 @@ export default function AuthLayout({
 
       {/* ── Form panel ── */}
       <div className="flex flex-1 flex-col relative">
-        {/* Subtle dot grid — light only */}
+        {/* Subtle dot grid */}
         <div className="absolute inset-0 bg-[radial-gradient(circle,oklch(0.5_0.12_264/0.07)_1px,transparent_1px)] bg-[size:24px_24px] dark:bg-[radial-gradient(circle,oklch(1_0_0/0.03)_1px,transparent_1px)]" />
-        {/* Pulsing glow behind the form card — always visible regardless of     */}
-        {/* viewport width since this panel is never hidden.                      */}
+        {/* Pulsing glow behind the form card */}
         <div
           aria-hidden="true"
           style={{ animation: "auth-glow-pulse 4s ease-in-out infinite" }}
-          className="pointer-events-none absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary blur-3xl"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl"
         />
 
         <div className="relative flex items-center justify-between p-4 pl-6">
           {/* Mobile logo */}
-          <div className="flex lg:hidden items-center gap-2">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
-              <ShieldCheck className="size-4 text-primary" />
-            </div>
-            <span className="text-sm font-semibold tracking-tight">
-              API Sentinel
-            </span>
+          <div className="flex lg:hidden">
+            <Logo variant="full" size="sm" />
           </div>
           <div className="hidden lg:block" />
           <ThemeToggle />

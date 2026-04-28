@@ -84,27 +84,31 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Glow tokens */
+  --glow-primary: oklch(0.47 0.21 264 / 0.15);
+  --glow-success: oklch(0.62 0.17 145 / 0.15);
+  --glow-destructive: oklch(0.577 0.245 27.325 / 0.2);
 }
 
 .dark {
-  --background: oklch(0.13 0.02 264);
+  --background: oklch(0.12 0.02 260);
   --foreground: oklch(0.96 0.005 264);
-  --card: oklch(0.18 0.025 264);
+  --card: oklch(0.16 0.02 260);
   --card-foreground: oklch(0.96 0.005 264);
-  --popover: oklch(0.18 0.025 264);
+  --popover: oklch(0.16 0.02 260);
   --popover-foreground: oklch(0.96 0.005 264);
-  --primary: oklch(0.68 0.2 264);
-  --primary-foreground: oklch(0.12 0.02 264);
-  --secondary: oklch(0.23 0.03 264);
+  --primary: oklch(0.65 0.22 260);
+  --primary-foreground: oklch(0.10 0.02 260);
+  --secondary: oklch(0.22 0.03 264);
   --secondary-foreground: oklch(0.9 0.01 264);
-  --muted: oklch(0.22 0.025 264);
-  --muted-foreground: oklch(0.62 0.04 264);
-  --accent: oklch(0.25 0.04 264);
+  --muted: oklch(0.20 0.025 264);
+  --muted-foreground: oklch(0.58 0.04 264);
+  --accent: oklch(0.22 0.04 264);
   --accent-foreground: oklch(0.9 0.01 264);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.68 0.2 264 / 40%);
+  --border: oklch(0.25 0.03 260);
+  --input: oklch(1 0 0 / 8%);
+  --ring: oklch(0.65 0.22 260 / 40%);
   --chart-1: oklch(0.809 0.105 251.813);
   --chart-2: oklch(0.623 0.214 259.815);
   --chart-3: oklch(0.546 0.245 262.881);
@@ -112,14 +116,18 @@
   --chart-5: oklch(0.424 0.199 265.638);
   --success: oklch(0.65 0.18 145);
   --warning: oklch(0.75 0.18 75);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: oklch(0.10 0.02 260);
+  --sidebar-foreground: oklch(0.96 0.005 264);
+  --sidebar-primary: oklch(0.65 0.22 260);
+  --sidebar-primary-foreground: oklch(0.10 0.02 260);
+  --sidebar-accent: oklch(0.18 0.025 260);
+  --sidebar-accent-foreground: oklch(0.96 0.005 264);
+  --sidebar-border: oklch(0.25 0.03 260);
+  --sidebar-ring: oklch(0.65 0.22 260 / 40%);
+  /* Glow token for effects */
+  --glow-primary: oklch(0.65 0.22 260 / 0.2);
+  --glow-success: oklch(0.65 0.18 145 / 0.2);
+  --glow-destructive: oklch(0.704 0.191 22.216 / 0.25);
 }
 
 @layer base {
@@ -141,4 +149,87 @@
 @keyframes auth-glow-pulse {
   0%, 100% { opacity: 0.2; transform: scale(1); }
   50%      { opacity: 0.5; transform: scale(1.12); }
+}
+
+/* ── Design system animations ───────────────────────────────────────────────── */
+
+/* Gentle fade-in + slide-up for page content mounting */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Shimmer sweep for skeleton loading states */
+@keyframes shimmer {
+  from { background-position: -200% center; }
+  to   { background-position: 200% center; }
+}
+
+/* Soft glow pulse for UP status indicators */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 var(--glow-success); }
+  50%      { box-shadow: 0 0 0 6px transparent; }
+}
+
+/* Slow animated gradient mesh for branding panels */
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Utility classes ─────────────────────────────────────────────────────────── */
+
+@layer utilities {
+  /* Glass surface — dark mode: frosted dark pane; light mode: frosted white pane */
+  .glass {
+    @apply backdrop-blur-xl;
+    background: oklch(1 0 0 / 0.04);
+    border: 1px solid oklch(1 0 0 / 0.08);
+  }
+  :root .glass {
+    background: oklch(0 0 0 / 0.03);
+    border: 1px solid oklch(0 0 0 / 0.07);
+  }
+
+  /* Glass card surface — slightly more opaque than .glass for card containers */
+  .glass-card {
+    @apply backdrop-blur-xl rounded-xl;
+    background: oklch(1 0 0 / 0.03);
+    border: 1px solid oklch(1 0 0 / 0.08);
+  }
+  :root .glass-card {
+    background: oklch(0 0 0 / 0.02);
+    border: 1px solid oklch(0 0 0 / 0.06);
+  }
+
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fade-in 0.35s ease-out both;
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--muted) 25%,
+      oklch(from var(--muted) calc(l + 0.04) c h) 50%,
+      var(--muted) 75%
+    );
+    background-size: 200% auto;
+    animation: shimmer 1.6s linear infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2.4s ease-in-out infinite;
+  }
+
+  /* Animated gradient mesh background */
+  .bg-gradient-mesh {
+    background-image:
+      radial-gradient(ellipse 80% 60% at 20% 30%, oklch(0.65 0.22 260 / 0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 70%, oklch(0.65 0.18 145 / 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 50% 50%, oklch(0.65 0.22 260 / 0.05) 0%, transparent 70%);
+    background-size: 200% 200%;
+    animation: gradient-shift 12s ease infinite;
+  }
 }

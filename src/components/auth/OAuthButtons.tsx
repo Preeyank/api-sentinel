@@ -36,7 +36,7 @@ export function OAuthButtons({ disabled }: { disabled?: boolean }) {
           variant="outline"
           onClick={() => handleOAuth("github")}
           disabled={!!oauthLoading || disabled}
-          className="gap-2 border-border/60 hover:bg-accent/80"
+          className="h-11 gap-2 border-border/60 hover:bg-accent/80"
         >
           {oauthLoading === "github" ? (
             <Loader2 className="size-4 animate-spin" />
@@ -50,7 +50,7 @@ export function OAuthButtons({ disabled }: { disabled?: boolean }) {
           variant="outline"
           onClick={() => handleOAuth("google")}
           disabled={!!oauthLoading || disabled}
-          className="gap-2 border-border/60 hover:bg-accent/80"
+          className="h-11 gap-2 border-border/60 hover:bg-accent/80"
         >
           {oauthLoading === "google" ? (
             <Loader2 className="size-4 animate-spin" />

@@ -20,10 +20,10 @@ export default async function MonitorsPage() {
   });
 
   const monitorIds = monitors.map((m) => m.id);
-  const twentyFourHoursAgo = new Date();
-  twentyFourHoursAgo.setDate(twentyFourHoursAgo.getDate() - 1);
+  const now = new Date();
+  const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1_000);
 
-  const [totalCounts, successCounts] = await Promise.all([
+  const [totalCounts, successCounts, recentChecks] = await Promise.all([
     prisma.checkResult.groupBy({
       by: ["monitorId"],
       where: {
@@ -41,6 +41,15 @@ export default async function MonitorsPage() {
       },
       _count: { id: true },
     }),
+    // For uptime mini-bars
+    prisma.checkResult.findMany({
+      where: {
+        monitorId: { in: monitorIds },
+        checkedAt: { gte: twentyFourHoursAgo },
+      },
+      select: { monitorId: true, checkedAt: true, errorType: true },
+      orderBy: { checkedAt: "asc" },
+    }),
   ]);
 
   const totalMap = Object.fromEntries(
@@ -49,6 +58,22 @@ export default async function MonitorsPage() {
   const successMap = Object.fromEntries(
     successCounts.map((r) => [r.monitorId, r._count.id]),
   );
+
+  type Segment = "up" | "down" | "none";
+  function buildSegments(monitorId: string): Segment[] {
+    return Array.from({ length: 24 }, (_, i) => {
+      const segStart = new Date(now.getTime() - (24 - i) * 60 * 60 * 1_000);
+      const segEnd = new Date(segStart.getTime() + 60 * 60 * 1_000);
+      const hourChecks = recentChecks.filter(
+        (c) =>
+          c.monitorId === monitorId &&
+          c.checkedAt >= segStart &&
+          c.checkedAt < segEnd,
+      );
+      if (hourChecks.length === 0) return "none";
+      return hourChecks.some((c) => c.errorType !== null) ? "down" : "up";
+    });
+  }
 
   const monitorsWithStats: MonitorWithStats[] = monitors.map((m) => {
     const latestCheck = m.checkResults[0] ?? null;
@@ -62,13 +87,14 @@ export default async function MonitorsPage() {
     const total = totalMap[m.id] ?? 0;
     const success = successMap[m.id] ?? 0;
     const uptime24h = total > 0 ? (success / total) * 100 : null;
+    const uptimeSegments = buildSegments(m.id);
 
     const { checkResults: _cr, ...rest } = m;
-    return { ...rest, status, uptime24h };
+    return { ...rest, status, uptime24h, uptimeSegments };
   });
 
   return (
-    <div className="max-w-4xl p-6 lg:p-8">
+    <div className="max-w-5xl p-6 lg:p-8 animate-fade-in">
       <MonitorList monitors={monitorsWithStats} />
     </div>
   );

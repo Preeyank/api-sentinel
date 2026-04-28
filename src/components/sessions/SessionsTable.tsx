@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { authClient, useSession } from "@/lib/auth-client";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { Monitor, Smartphone, Globe, Trash2, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -119,7 +119,10 @@ export function SessionsTable() {
           return (
             <div
               key={session.id}
-              className="flex items-center gap-4 px-4 py-3.5"
+              className={cn(
+                "flex items-center gap-4 px-4 py-3.5 transition-colors",
+                isCurrent && "border-l-2 border-l-primary bg-primary/5",
+              )}
             >
               <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
                 <Icon className="size-4 text-muted-foreground" />

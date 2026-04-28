@@ -20,7 +20,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import { registerSchema, type RegisterFormValues } from "@/lib/validations/auth";
+import {
+  registerSchema,
+  type RegisterFormValues,
+} from "@/lib/validations/auth";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -78,6 +81,7 @@ export function RegisterForm() {
                   id="register-name"
                   placeholder="John Doe"
                   autoComplete="name"
+                  className="h-11 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60"
                   {...field}
                 />
                 <FieldError
@@ -98,6 +102,7 @@ export function RegisterForm() {
                   type="email"
                   placeholder="you@example.com"
                   autoComplete="email"
+                  className="h-11 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60"
                   {...field}
                 />
                 <FieldError
@@ -118,6 +123,7 @@ export function RegisterForm() {
                   type="password"
                   placeholder="Min. 8 characters"
                   autoComplete="new-password"
+                  className="h-11 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60"
                   {...field}
                 />
                 <FieldError
@@ -140,6 +146,7 @@ export function RegisterForm() {
                   type="password"
                   placeholder="Repeat your password"
                   autoComplete="new-password"
+                  className="h-11 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/60"
                   {...field}
                 />
                 <FieldError

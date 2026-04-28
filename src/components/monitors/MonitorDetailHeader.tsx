@@ -15,6 +15,23 @@ type Props = {
   latencyThresholdMs: number | null;
 };
 
+function StatusDot({ status }: { status: MonitorStatus }) {
+  if (status === "UP") {
+    return (
+      <span className="relative flex size-3 shrink-0">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
+        <span className="relative inline-flex size-3 rounded-full bg-success animate-pulse-glow" />
+      </span>
+    );
+  }
+  if (status === "DOWN") {
+    return <span className="size-3 shrink-0 rounded-full bg-destructive" />;
+  }
+  return (
+    <span className="size-3 shrink-0 rounded-full bg-muted-foreground/40" />
+  );
+}
+
 export function MonitorDetailHeader({
   name,
   status,
@@ -26,9 +43,12 @@ export function MonitorDetailHeader({
   latencyThresholdMs,
 }: Props) {
   return (
-    <div className="mt-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-xl font-semibold text-foreground">{name}</h1>
+    <div className="mt-5">
+      <div className="flex flex-wrap items-center gap-3">
+        <StatusDot status={status} />
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          {name}
+        </h1>
         <MonitorStatusBadge status={status} />
         <Badge
           variant="outline"
@@ -37,12 +57,22 @@ export function MonitorDetailHeader({
           {ENV_LABELS[environment]}
         </Badge>
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">{url}</p>
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        Checked every {formatInterval(intervalSec)} · Timeout {timeoutMs / 1000}
-        s · Expects {expectedStatus}
-        {latencyThresholdMs && <> · Latency alert &gt;{latencyThresholdMs}ms</>}
-      </p>
+      <p className="mt-1.5 text-sm text-muted-foreground">{url}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {[
+          `Every ${formatInterval(intervalSec)}`,
+          `Timeout ${timeoutMs / 1000}s`,
+          `Expects ${expectedStatus}`,
+          ...(latencyThresholdMs ? [`Alert >${latencyThresholdMs}ms`] : []),
+        ].map((chip) => (
+          <span
+            key={chip}
+            className="rounded-full border border-border/60 bg-muted/50 px-2.5 py-0.5 text-[11px] text-muted-foreground"
+          >
+            {chip}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

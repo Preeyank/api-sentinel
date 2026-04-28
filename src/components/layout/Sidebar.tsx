@@ -4,17 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  ShieldCheck,
-  PanelLeftClose,
-  PanelLeftOpen,
-  User,
-  LogOut,
-} from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, User, LogOut } from "lucide-react";
 import { cn, getInitials, formatPlanLabel } from "@/lib/utils";
 import { signOut } from "@/lib/auth-client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { NAV_ITEMS } from "@/lib/constants/nav";
+import { Logo } from "@/components/shared/Logo";
 
 type SidebarProps = {
   user: { name: string; email: string };
@@ -26,7 +21,13 @@ export function Sidebar({ user, plan }: SidebarProps) {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [logoLoading, setLogoLoading] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Reset logo loading state on any navigation (not just /about)
+  useEffect(() => {
+    setLogoLoading(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -58,27 +59,38 @@ export function Sidebar({ user, plan }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "relative hidden h-full shrink-0 flex-col border-r bg-sidebar md:flex overflow-visible transition-[width] duration-200 ease-in-out",
+        "relative z-10 hidden h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar/90 backdrop-blur-xl md:flex overflow-visible transition-[width] duration-200 ease-in-out",
         collapsed ? "w-14" : "w-60",
       )}
     >
       {/* Decorative top glow — visible in both modes, more prominent in dark */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-primary/[0.06] to-transparent" aria-hidden="true" />
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-primary/[0.06] to-transparent"
+        aria-hidden="true"
+      />
 
       {/* Header: logo/title (hides when collapsed) + always-visible toggle */}
       <div className="flex h-10 shrink-0 items-center px-2 mt-1.5">
         <div
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-2.5 transition-all duration-200",
+            "flex min-w-0 flex-1 items-center transition-all duration-200",
             collapsed ? "w-0 overflow-hidden opacity-0" : "opacity-100",
           )}
         >
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 shadow-sm ring-2 ring-primary/30">
-            <ShieldCheck className="size-4 text-primary" />
-          </div>
-          <span className="whitespace-nowrap text-sm font-semibold tracking-tight text-sidebar-foreground">
-            API Sentinel
-          </span>
+          <button
+            onClick={() => {
+              setLogoLoading(true);
+              router.push("/about");
+            }}
+            title="Back to home"
+            className={cn(
+              "cursor-pointer transition-opacity",
+              logoLoading &&
+                "cursor-wait opacity-60 animate-pulse pointer-events-none",
+            )}
+          >
+            <Logo variant="full" size="sm" />
+          </button>
         </div>
         <button
           onClick={toggle}
@@ -103,17 +115,14 @@ export function Sidebar({ user, plan }: SidebarProps) {
               href={href}
               title={collapsed ? label : undefined}
               className={cn(
-                "relative flex items-center gap-3 overflow-hidden rounded-lg px-2.5 py-2.5 text-sm font-medium transition-all duration-150",
+                "relative flex items-center gap-3 overflow-hidden rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150",
                 collapsed && "justify-center px-0",
                 active
-                  ? "bg-primary/10 text-primary ring-1 ring-primary/15"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               )}
             >
-              {active && (
-                <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-primary" />
-              )}
-              <Icon className="size-4 shrink-0" />
+              <Icon className="size-[18px] shrink-0" />
               {!collapsed && label}
             </Link>
           );
@@ -137,7 +146,7 @@ export function Sidebar({ user, plan }: SidebarProps) {
             <div className="border-t p-1.5">
               <button
                 onClick={handleSignOut}
-                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
+                className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
               >
                 <LogOut className="size-3.5" />
                 Sign out
@@ -154,7 +163,7 @@ export function Sidebar({ user, plan }: SidebarProps) {
             collapsed && "justify-center",
           )}
         >
-          <Avatar size="sm" className="ring-1 ring-primary/25">
+          <Avatar size="sm" className="ring-2 ring-primary/30">
             <AvatarFallback className="bg-primary/15 text-xs font-semibold text-primary">
               {getInitials(user.name)}
             </AvatarFallback>
