@@ -24,12 +24,21 @@ export async function dispatchDueChecks(): Promise<CronRunSummary> {
 
   const limit = pLimit(CRON_CONCURRENCY);
   let failures = 0;
+  let skipped = 0;
 
   await Promise.all(
     dueMonitors.map(({ id }) =>
       limit(async () => {
-        const outcome = await runCheck(id, { updateNextCheckAt: true });
-        if (!outcome.ok) failures++;
+        try {
+          const outcome = await runCheck(id, { updateNextCheckAt: true });
+          if (!outcome.ok) failures++;
+        } catch (err) {
+          // An unexpected exception (DB failure, bug, network error outside the
+          // check itself) must not abort the rest of the batch. Log it and
+          // increment skipped so the caller can see something went wrong.
+          skipped++;
+          console.error(`[dispatch] runCheck failed for monitor ${id}:`, err);
+        }
       }),
     ),
   );
@@ -37,7 +46,7 @@ export async function dispatchDueChecks(): Promise<CronRunSummary> {
   return {
     checked: dueMonitors.length,
     failures,
-    skipped: 0,
+    skipped,
     durationMs: Date.now() - start,
   };
 }
