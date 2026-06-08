@@ -103,7 +103,7 @@ export default async function MonitorDetailPage({
         lastCheckedAt={monitor.lastCheckedAt}
       />
 
-      <OpenIncidentsList incidents={openIncidents} />
+      <OpenIncidentsList incidents={openIncidents} monitorSlug={monitor.slug} />
 
       <section className="mt-6">
         <h2 className="mb-2 text-sm font-medium text-foreground">
