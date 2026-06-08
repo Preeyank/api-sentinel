@@ -4,6 +4,10 @@ import type { CheckOutcome } from "@/types/checks";
 import {
   RESPONSE_SNIPPET_MAX_LENGTH,
   CHECK_TRANSACTION_TIMEOUT_MS,
+  CONSECUTIVE_FAILURE_THRESHOLD,
+  CONSECUTIVE_LATENCY_THRESHOLD,
+  CONSECUTIVE_LATENCY_RECOVERY,
+  MIN_SUCCESSFUL_CHECKS_FOR_LATENCY,
 } from "@/lib/constants/monitors";
 
 export type { CheckOutcome };
@@ -78,6 +82,42 @@ async function fetchUrlWithRetry(url: string, timeoutMs: number) {
   return fetchUrl(url, timeoutMs);
 }
 
+// ─── Historical-check predicates ──────────────────────────────────────────────
+// Used to classify prior CheckResult rows when deciding whether to open or
+// close an incident based on a consecutive-streak rule.
+
+type HistoricalCheck = {
+  errorType: ErrorType | null;
+  latencyMs: number | null;
+};
+
+function isFailureRecord(check: HistoricalCheck): boolean {
+  return check.errorType !== null;
+}
+
+function isLatencyWarningRecord(
+  check: HistoricalCheck,
+  thresholdMs: number | null,
+): boolean {
+  return (
+    check.errorType === null &&
+    thresholdMs !== null &&
+    (check.latencyMs ?? 0) > thresholdMs
+  );
+}
+
+// Healthy = successful response AND below latency threshold.
+// A failed check is NOT healthy, so a slow→fail transition cannot accidentally
+// be counted as latency recovery.
+function isLatencyHealthyRecord(
+  check: HistoricalCheck,
+  thresholdMs: number | null,
+): boolean {
+  if (check.errorType !== null) return false;
+  if (thresholdMs === null) return true;
+  return (check.latencyMs ?? 0) <= thresholdMs;
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export async function runCheck(
@@ -102,8 +142,8 @@ export async function runCheck(
   const ok = errorType === null;
 
   // 3. If latency alerting is enabled on this monitor (latencyThresholdMs != null),
-  //    a healthy response that exceeds the threshold opens a LATENCY incident
-  //    (distinct from a FAILURE incident) so the two can coexist independently.
+  //    a healthy response that exceeds the threshold is a latency warning
+  //    (distinct from a FAILURE) so the two can coexist independently.
   const latencyWarning =
     ok &&
     monitor.latencyThresholdMs !== null &&
@@ -115,6 +155,14 @@ export async function runCheck(
   //    duplicate incident (race-condition guard).
   const now = new Date();
 
+  // How many prior CheckResult rows we need to inspect to evaluate all three
+  // streak rules (FAILURE open, LATENCY open, LATENCY close).
+  const RECENT_HISTORY_LOOKBACK = Math.max(
+    CONSECUTIVE_FAILURE_THRESHOLD - 1,
+    CONSECUTIVE_LATENCY_THRESHOLD - 1,
+    CONSECUTIVE_LATENCY_RECOVERY - 1,
+  );
+
   await prisma.$transaction(async (tx) => {
     // Separate queries per incident type so FAILURE and LATENCY can coexist
     const openFailureIncident = await tx.incident.findFirst({
@@ -122,6 +170,15 @@ export async function runCheck(
     });
     const openLatencyIncident = await tx.incident.findFirst({
       where: { monitorId, status: "OPEN", type: "LATENCY" },
+    });
+
+    // Pull just enough recent history to evaluate the streak rules below.
+    // Ordered newest-first; slice(0, N) gives the most recent N rows.
+    const recentChecks = await tx.checkResult.findMany({
+      where: { monitorId },
+      orderBy: { checkedAt: "desc" },
+      take: RECENT_HISTORY_LOOKBACK,
+      select: { errorType: true, latencyMs: true },
     });
 
     await tx.checkResult.create({
@@ -139,9 +196,18 @@ export async function runCheck(
     });
 
     // ── FAILURE incident lifecycle ──────────────────────────────────────────
-    // First failure with no open FAILURE incident → open one
-    // Recovery with an open FAILURE incident → close it
-    if (!ok && !openFailureIncident) {
+    // Open: CONSECUTIVE_FAILURE_THRESHOLD failures in a row (current + prior).
+    //       Acts as a new-monitor guard — if we don't yet have THRESHOLD-1
+    //       prior checks, we never have enough evidence to open.
+    // Close: unchanged — first success closes the incident.
+    const priorFailuresNeeded = CONSECUTIVE_FAILURE_THRESHOLD - 1;
+    const priorFailureWindow = recentChecks.slice(0, priorFailuresNeeded);
+    const failureStreak =
+      !ok &&
+      priorFailureWindow.length === priorFailuresNeeded &&
+      priorFailureWindow.every(isFailureRecord);
+
+    if (failureStreak && !openFailureIncident) {
       await tx.incident.create({
         data: {
           monitorId,
@@ -158,21 +224,52 @@ export async function runCheck(
     }
 
     // ── LATENCY incident lifecycle ──────────────────────────────────────────
-    // Slow but healthy response with no open LATENCY incident → open one
-    // Latency back to normal with an open LATENCY incident → close it
-    if (latencyWarning && !openLatencyIncident) {
-      await tx.incident.create({
-        data: {
-          monitorId,
-          type: "LATENCY",
-          status: "OPEN",
-          incidentSnapshot: {
-            latencyMs,
-            thresholdMs: monitor.latencyThresholdMs,
-          },
-        },
+    // Open: CONSECUTIVE_LATENCY_THRESHOLD warnings in a row AND at least
+    //       MIN_SUCCESSFUL_CHECKS_FOR_LATENCY successful checks of history
+    //       (so we're not alerting on a barely-used monitor).
+    // Close: CONSECUTIVE_LATENCY_RECOVERY healthy checks in a row. A failed
+    //        check is NOT recovery — slow→fail keeps the LATENCY incident open
+    //        because the monitor is getting worse, not better.
+    const priorWarningsNeeded = CONSECUTIVE_LATENCY_THRESHOLD - 1;
+    const priorWarningWindow = recentChecks.slice(0, priorWarningsNeeded);
+    const latencyStreak =
+      latencyWarning &&
+      priorWarningWindow.length === priorWarningsNeeded &&
+      priorWarningWindow.every((c) =>
+        isLatencyWarningRecord(c, monitor.latencyThresholdMs),
+      );
+
+    const priorRecoveryNeeded = CONSECUTIVE_LATENCY_RECOVERY - 1;
+    const priorRecoveryWindow = recentChecks.slice(0, priorRecoveryNeeded);
+    const recoveryStreak =
+      ok &&
+      !latencyWarning &&
+      priorRecoveryWindow.length === priorRecoveryNeeded &&
+      priorRecoveryWindow.every((c) =>
+        isLatencyHealthyRecord(c, monitor.latencyThresholdMs),
+      );
+
+    if (latencyStreak && !openLatencyIncident) {
+      // Only run the count when we're otherwise ready to open — avoids the
+      // query on the vast majority of checks that aren't latency warnings.
+      const successfulCount = await tx.checkResult.count({
+        where: { monitorId, errorType: null },
       });
-    } else if (!latencyWarning && openLatencyIncident) {
+
+      if (successfulCount >= MIN_SUCCESSFUL_CHECKS_FOR_LATENCY) {
+        await tx.incident.create({
+          data: {
+            monitorId,
+            type: "LATENCY",
+            status: "OPEN",
+            incidentSnapshot: {
+              latencyMs,
+              thresholdMs: monitor.latencyThresholdMs,
+            },
+          },
+        });
+      }
+    } else if (recoveryStreak && openLatencyIncident) {
       await tx.incident.update({
         where: { id: openLatencyIncident.id },
         data: { status: "CLOSED", endedAt: now },
