@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AlertTriangle, Zap } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -20,9 +21,10 @@ function durationLabel(startedAt: Date): string {
 
 type Props = {
   incidents: Incident[];
+  monitorSlug: string;
 };
 
-export function OpenIncidentsList({ incidents }: Props) {
+export function OpenIncidentsList({ incidents, monitorSlug }: Props) {
   if (incidents.length === 0) return null;
 
   return (
@@ -34,11 +36,12 @@ export function OpenIncidentsList({ incidents }: Props) {
         {incidents.map((incident) => {
           const isFailure = incident.type === "FAILURE";
           return (
-            <div
+            <Link
               key={incident.id}
+              href={`/dashboard/monitors/${monitorSlug}/incidents/${incident.id}`}
               className={cn(
-                "flex items-start gap-3 rounded-xl border border-border bg-card px-4 py-3.5",
-                "border-l-2",
+                "flex items-start gap-3 rounded-xl border border-border bg-card px-4 py-3.5 transition-colors",
+                "border-l-2 hover:bg-accent/40",
                 isFailure
                   ? "border-l-destructive bg-destructive/[0.03]"
                   : "border-l-amber-500 bg-amber-500/[0.03]",
@@ -84,7 +87,7 @@ export function OpenIncidentsList({ incidents }: Props) {
                   Started {formatDate(incident.startedAt)}
                 </p>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
