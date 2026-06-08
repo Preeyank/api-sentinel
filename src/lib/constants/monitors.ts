@@ -40,6 +40,23 @@ export const CRON_CONCURRENCY = 5;
 // Default latency threshold applied when a user first enables latency alerting.
 export const DEFAULT_LATENCY_THRESHOLD_MS = 2_000;
 
+// Open a FAILURE incident only after this many consecutive failed checks
+// (current + prior). Doubles as a new-monitor guard: fewer than THRESHOLD-1
+// prior checks → never open.
+export const CONSECUTIVE_FAILURE_THRESHOLD = 3;
+
+// Open a LATENCY incident only after this many consecutive slow-but-healthy
+// checks (current + prior).
+export const CONSECUTIVE_LATENCY_THRESHOLD = 2;
+
+// Close a LATENCY incident only after this many consecutive HEALTHY checks
+// (OK + below threshold). A failed check does NOT count as recovery.
+export const CONSECUTIVE_LATENCY_RECOVERY = 2;
+
+// Require this many successful historical checks before a LATENCY incident
+// can ever be opened — guards against false alarms on barely-used monitors.
+export const MIN_SUCCESSFUL_CHECKS_FOR_LATENCY = 10;
+
 export type MonitorStatus = "UP" | "DOWN" | "PAUSED" | "UNKNOWN";
 
 export const STATUS_LABELS: Record<MonitorStatus, string> = {
