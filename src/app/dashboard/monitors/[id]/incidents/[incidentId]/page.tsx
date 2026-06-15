@@ -3,9 +3,11 @@ import { AlertTriangle, Zap } from "lucide-react";
 import { getRequiredSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { MonitorBreadcrumb } from "@/components/monitors/MonitorBreadcrumb";
+import { AITriageSection } from "@/components/incidents/AITriageSection";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { ERROR_LABELS } from "@/lib/constants/monitors";
+import type { TriageResult } from "@/lib/ai/triage";
 
 function formatDuration(startedAt: Date, endedAt: Date | null): string {
   const end = endedAt ? endedAt.getTime() : Date.now();
@@ -49,6 +51,18 @@ export default async function IncidentDetailPage({
   const isOpen = incident.status === "OPEN";
   const typeLabel = isFailure ? "Service failure" : "High latency";
   const snapshot = (incident.incidentSnapshot ?? {}) as IncidentSnapshot;
+
+  // Defensively parse stored triage JSON — if the field is missing or
+  // malformed (e.g. manually edited in Prisma Studio), treat it as null
+  // so the page never crashes and falls back to the generate button.
+  let existingTriage: TriageResult | null = null;
+  if (incident.aiTriageText) {
+    try {
+      existingTriage = JSON.parse(incident.aiTriageText) as TriageResult;
+    } catch {
+      // malformed — leave as null
+    }
+  }
 
   return (
     <div className="flex h-full flex-col p-6 lg:p-8 animate-fade-in">
@@ -175,6 +189,13 @@ export default async function IncidentDetailPage({
           </dl>
         </div>
       </section>
+
+      <AITriageSection
+        incidentId={incident.id}
+        existingTriage={existingTriage}
+        generatedAt={incident.aiGeneratedAt}
+        model={incident.aiModel}
+      />
     </div>
   );
 }
