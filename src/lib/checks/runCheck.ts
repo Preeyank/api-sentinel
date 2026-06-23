@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { ErrorType } from "@/generated/prisma/enums";
-import type { CheckOutcome } from "@/types/checks";
+import type { CheckOutcome, IncidentEvent } from "@/types/checks";
 import {
   RESPONSE_SNIPPET_MAX_LENGTH,
   CHECK_TRANSACTION_TIMEOUT_MS,
@@ -163,6 +163,8 @@ export async function runCheck(
     CONSECUTIVE_LATENCY_RECOVERY - 1,
   );
 
+  let incidentEvent: IncidentEvent | null = null;
+
   await prisma.$transaction(async (tx) => {
     // Separate queries per incident type so FAILURE and LATENCY can coexist
     const openFailureIncident = await tx.incident.findFirst({
@@ -216,11 +218,13 @@ export async function runCheck(
           incidentSnapshot: { statusCode, latencyMs, errorType },
         },
       });
+      incidentEvent = { kind: "opened", incidentType: "FAILURE", monitorId };
     } else if (ok && openFailureIncident) {
       await tx.incident.update({
         where: { id: openFailureIncident.id },
         data: { status: "CLOSED", endedAt: now },
       });
+      incidentEvent = { kind: "closed", incidentType: "FAILURE", monitorId };
     }
 
     // ── LATENCY incident lifecycle ──────────────────────────────────────────
@@ -268,12 +272,14 @@ export async function runCheck(
             },
           },
         });
+        incidentEvent = { kind: "opened", incidentType: "LATENCY", monitorId };
       }
     } else if (recoveryStreak && openLatencyIncident) {
       await tx.incident.update({
         where: { id: openLatencyIncident.id },
         data: { status: "CLOSED", endedAt: now },
       });
+      incidentEvent = { kind: "closed", incidentType: "LATENCY", monitorId };
     }
   }, { timeout: CHECK_TRANSACTION_TIMEOUT_MS });
 
@@ -284,5 +290,6 @@ export async function runCheck(
     responseSnippet,
     ok,
     latencyWarning,
+    incidentEvent,
   };
 }
