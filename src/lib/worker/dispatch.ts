@@ -1,6 +1,7 @@
 import pLimit from "p-limit";
 import { prisma } from "@/lib/prisma";
 import { runCheck } from "@/lib/checks/runCheck";
+import { sendIncidentAlert } from "@/lib/email/sendIncidentAlert";
 import type { CronRunSummary } from "@/types/worker";
 import { CRON_CONCURRENCY } from "@/lib/constants/monitors";
 
@@ -32,6 +33,16 @@ export async function dispatchDueChecks(): Promise<CronRunSummary> {
         try {
           const outcome = await runCheck(id, { updateNextCheckAt: true });
           if (!outcome.ok) failures++;
+
+          // Transaction has committed — safe to send email now.
+          // Wrapped in its own try/catch so a failed send never aborts the batch.
+          if (outcome.incidentEvent) {
+            try {
+              await sendIncidentAlert(outcome.incidentEvent);
+            } catch (emailErr) {
+              console.error(`[dispatch] email failed for monitor ${id}:`, emailErr);
+            }
+          }
         } catch (err) {
           // An unexpected exception (DB failure, bug, network error outside the
           // check itself) must not abort the rest of the batch. Log it and
