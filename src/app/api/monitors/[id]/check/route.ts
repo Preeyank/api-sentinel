@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { runCheck } from "@/lib/checks/runCheck";
+import { sendIncidentAlert } from "@/lib/email/sendIncidentAlert";
 
 export async function POST(
   request: NextRequest,
@@ -23,6 +24,14 @@ export async function POST(
 
   // 3. Run the check — manual runs never reschedule the automated check
   const outcome = await runCheck(id, { updateNextCheckAt: false });
+
+  // Send alert email if an incident was opened or closed, same as the cron path.
+  // Fire-and-forget — don't let a failed email affect the API response.
+  if (outcome.incidentEvent) {
+    sendIncidentAlert(outcome.incidentEvent).catch((err) =>
+      console.error("[manual check] email failed:", err),
+    );
+  }
 
   return NextResponse.json(outcome);
 }
