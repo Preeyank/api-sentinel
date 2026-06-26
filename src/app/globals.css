@@ -178,9 +178,10 @@
   100% { background-position: 0% 50%; }
 }
 
-/* Rotating conic gradient for the AI triage button's glowing border */
-@keyframes ai-border-spin {
-  to { transform: rotate(1turn); }
+/* Subtle glow pulse for the AI triage button */
+@keyframes ai-glow-soft {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 0.4; }
 }
 
 /* ── Utility classes ─────────────────────────────────────────────────────────── */
@@ -228,50 +229,52 @@
     animation: pulse-glow 2.4s ease-in-out infinite;
   }
 
-  /* AI triage button — animated glowing gradient border.
-     A conic-gradient ring rotates behind the button via a masked pseudo-element,
-     plus a soft blurred glow underneath. Set position:relative on the button. */
+  /* AI triage button — elegant static gradient border in the site's blue theme.
+     A subtle 1px linear-gradient edge (no rotation), with a faint glow that
+     softly pulses underneath. On hover the glow lifts a touch. While generating,
+     the glow pulses a bit more noticeably. Restrained and professional. */
   .ai-glow-button {
     position: relative;
-    isolation: isolate;
+    transition: transform 0.2s ease;
   }
   .ai-glow-button::before {
     content: "";
     position: absolute;
-    inset: -2px;
+    inset: 0;
     border-radius: inherit;
-    padding: 2px;
-    background: conic-gradient(
-      from 0deg,
-      oklch(0.65 0.22 264),
-      oklch(0.7 0.2 320),
-      oklch(0.7 0.18 200),
-      oklch(0.65 0.22 264)
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      var(--chart-2) 0%,
+      oklch(0.6 0.16 264 / 0.35) 50%,
+      var(--chart-1) 100%
     );
     -webkit-mask:
       linear-gradient(#fff 0 0) content-box,
       linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
-    animation: ai-border-spin 4s linear infinite;
-    z-index: -1;
+    pointer-events: none;
   }
   .ai-glow-button::after {
     content: "";
     position: absolute;
-    inset: -4px;
+    inset: 0;
     border-radius: inherit;
-    background: conic-gradient(
-      from 0deg,
-      oklch(0.65 0.22 264),
-      oklch(0.7 0.2 320),
-      oklch(0.7 0.18 200),
-      oklch(0.65 0.22 264)
-    );
+    background: linear-gradient(135deg, var(--chart-3), var(--chart-1));
     filter: blur(10px);
-    opacity: 0.5;
-    animation: ai-border-spin 4s linear infinite;
-    z-index: -2;
+    opacity: 0.22;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .ai-glow-button:hover {
+    transform: translateY(-1px);
+  }
+  .ai-glow-button:hover::after {
+    opacity: 0.38;
+  }
+  .ai-glow-button.is-generating::after {
+    animation: ai-glow-soft 2s ease-in-out infinite;
   }
 
   /* Animated gradient mesh background */
