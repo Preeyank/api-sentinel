@@ -178,6 +178,12 @@
   100% { background-position: 0% 50%; }
 }
 
+/* Subtle glow pulse for the AI triage button */
+@keyframes ai-glow-soft {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 0.4; }
+}
+
 /* ── Utility classes ─────────────────────────────────────────────────────────── */
 
 @layer utilities {
@@ -221,6 +227,54 @@
 
   .animate-pulse-glow {
     animation: pulse-glow 2.4s ease-in-out infinite;
+  }
+
+  /* AI triage button — elegant static gradient border in the site's blue theme.
+     A subtle 1px linear-gradient edge (no rotation), with a faint glow that
+     softly pulses underneath. On hover the glow lifts a touch. While generating,
+     the glow pulses a bit more noticeably. Restrained and professional. */
+  .ai-glow-button {
+    position: relative;
+    transition: transform 0.2s ease;
+  }
+  .ai-glow-button::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      var(--chart-2) 0%,
+      oklch(0.6 0.16 264 / 0.35) 50%,
+      var(--chart-1) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .ai-glow-button::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, var(--chart-3), var(--chart-1));
+    filter: blur(10px);
+    opacity: 0.22;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .ai-glow-button:hover {
+    transform: translateY(-1px);
+  }
+  .ai-glow-button:hover::after {
+    opacity: 0.38;
+  }
+  .ai-glow-button.is-generating::after {
+    animation: ai-glow-soft 2s ease-in-out infinite;
   }
 
   /* Animated gradient mesh background */

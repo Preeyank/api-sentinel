@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { generateIncidentTriage } from "@/lib/actions/incidents";
-import { timeAgo } from "@/lib/utils";
+import { timeAgo, cn } from "@/lib/utils";
 import type { TriageResult } from "@/lib/ai/triage";
 
 type Props = {
@@ -64,16 +64,20 @@ export function AITriageSection({
               Generate an AI-assisted root cause analysis for this incident.
             </p>
             <Button
-              variant="outline"
-              size="sm"
+              size="lg"
               disabled={loading}
               onClick={handleGenerate}
-            >
-              {loading ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Sparkles className="size-4" />
+              className={cn(
+                "ai-glow-button h-10 gap-2 rounded-lg bg-card px-5 text-sm font-medium text-foreground hover:bg-card disabled:opacity-100",
+                loading && "is-generating",
               )}
+            >
+              <Sparkles
+                className={cn(
+                  "size-4 text-primary",
+                  loading && "animate-pulse",
+                )}
+              />
               {loading ? "Generating…" : "Generate AI Triage"}
             </Button>
           </div>

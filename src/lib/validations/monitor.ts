@@ -5,7 +5,12 @@ export const MonitorFormSchema = z.object({
     .string()
     .min(1, "Name is required")
     .max(30, "Name must be 30 characters or less"),
-  url: z.url("Must be a valid URL"),
+  url: z
+    .url("Must be a valid URL")
+    .refine(
+      (val) => /^https?:\/\//i.test(val),
+      "URL must start with http:// or https://",
+    ),
   environment: z.enum(["PROD", "STAGING", "DEV"]),
   intervalSec: z.number({ error: "Interval is required" }),
   expectedStatus: z.number().int().min(100, "Min 100").max(599, "Max 599"),
