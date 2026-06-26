@@ -178,6 +178,11 @@
   100% { background-position: 0% 50%; }
 }
 
+/* Rotating conic gradient for the AI triage button's glowing border */
+@keyframes ai-border-spin {
+  to { transform: rotate(1turn); }
+}
+
 /* ── Utility classes ─────────────────────────────────────────────────────────── */
 
 @layer utilities {
@@ -221,6 +226,52 @@
 
   .animate-pulse-glow {
     animation: pulse-glow 2.4s ease-in-out infinite;
+  }
+
+  /* AI triage button — animated glowing gradient border.
+     A conic-gradient ring rotates behind the button via a masked pseudo-element,
+     plus a soft blurred glow underneath. Set position:relative on the button. */
+  .ai-glow-button {
+    position: relative;
+    isolation: isolate;
+  }
+  .ai-glow-button::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    padding: 2px;
+    background: conic-gradient(
+      from 0deg,
+      oklch(0.65 0.22 264),
+      oklch(0.7 0.2 320),
+      oklch(0.7 0.18 200),
+      oklch(0.65 0.22 264)
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: ai-border-spin 4s linear infinite;
+    z-index: -1;
+  }
+  .ai-glow-button::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    background: conic-gradient(
+      from 0deg,
+      oklch(0.65 0.22 264),
+      oklch(0.7 0.2 320),
+      oklch(0.7 0.18 200),
+      oklch(0.65 0.22 264)
+    );
+    filter: blur(10px);
+    opacity: 0.5;
+    animation: ai-border-spin 4s linear infinite;
+    z-index: -2;
   }
 
   /* Animated gradient mesh background */

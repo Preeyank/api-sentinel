@@ -64,15 +64,15 @@ export function AITriageSection({
               Generate an AI-assisted root cause analysis for this incident.
             </p>
             <Button
-              variant="outline"
               size="sm"
               disabled={loading}
               onClick={handleGenerate}
+              className="ai-glow-button bg-card text-foreground hover:bg-card/80 hover:scale-100"
             >
               {loading ? (
-                <Loader2 className="size-4 animate-spin" />
+                <Loader2 className="size-4 animate-spin text-violet-500" />
               ) : (
-                <Sparkles className="size-4" />
+                <Sparkles className="size-4 text-violet-500" />
               )}
               {loading ? "Generating…" : "Generate AI Triage"}
             </Button>
