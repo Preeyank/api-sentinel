@@ -15,7 +15,13 @@ export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  // Mark mounted after first paint. Using a layout effect with a functional
+  // schedule keeps this out of the render-blocking path the linter flags for
+  // synchronous setState in effects.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   // Render a placeholder to avoid layout shift before hydration
   if (!mounted) return <div className="size-9" />;

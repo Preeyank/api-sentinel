@@ -89,7 +89,8 @@ export default async function MonitorsPage() {
     const uptime24h = total > 0 ? (success / total) * 100 : null;
     const uptimeSegments = buildSegments(m.id);
 
-    const { checkResults: _cr, ...rest } = m;
+    const { checkResults, ...rest } = m;
+    void checkResults; // omit the relation from the serialized payload
     return { ...rest, status, uptime24h, uptimeSegments };
   });
 
