@@ -24,9 +24,12 @@ export function Sidebar({ user, plan }: SidebarProps) {
   const [logoLoading, setLogoLoading] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Reset logo loading state on any navigation (not just /about)
+  // Reset logo loading state on any navigation (not just /about).
+  // Scheduled via rAF so the reset runs after paint rather than as a
+  // synchronous setState in the effect body (avoids cascading renders).
   useEffect(() => {
-    setLogoLoading(false);
+    const id = requestAnimationFrame(() => setLogoLoading(false));
+    return () => cancelAnimationFrame(id);
   }, [pathname]);
 
   useEffect(() => {
