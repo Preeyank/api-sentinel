@@ -1,8 +1,30 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CheckCircle2, AlertTriangle, XCircle, Clock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatDate, timeAgo } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+
+// Per-page metadata so a shared /status/{slug} link shows the monitor name in
+// the browser tab and link previews, rather than the generic app title.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const monitor = await prisma.monitor.findUnique({
+    where: { slug },
+    select: { name: true },
+  });
+
+  if (!monitor) return { title: "Status not found — API Sentinel" };
+
+  return {
+    title: `${monitor.name} — Status`,
+    description: `Live status and uptime for ${monitor.name}, monitored by API Sentinel.`,
+  };
+}
 
 export default async function StatusPage({
   params,
